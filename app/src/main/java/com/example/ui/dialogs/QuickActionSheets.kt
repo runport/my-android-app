@@ -4807,6 +4807,24 @@ fun RollHistoryModal(
     if (selectedRoll != null) allUsages.filter { it.rollId == selectedRoll!!.id } else emptyList()
   }
 
+  var editingUsage by remember { mutableStateOf<RollUsageEntity?>(null) }
+
+  editingUsage?.let { usage ->
+    RollUsageEditDialog(
+      usage = usage,
+      metersPerKg = selectedRoll?.metersPerKg ?: 0.0,
+      onSave = { newMeters, newKg, newModel, newNote ->
+        viewModel.updateRollUsageAction(usage.id, newMeters, newKg, newModel, newNote)
+        editingUsage = null
+      },
+      onDelete = {
+        viewModel.deleteRollUsageAction(usage.id)
+        editingUsage = null
+      },
+      onDismiss = { editingUsage = null }
+    )
+  }
+
   val initialM = selectedRoll?.initialMeters ?: 0.0
   val remainingM = selectedRoll?.remainingMeters ?: 0.0
   val consumedM = (initialM - remainingM).coerceAtLeast(0.0)
@@ -4905,6 +4923,20 @@ fun RollHistoryModal(
               }
               if (usage.note.isNotBlank()) {
                 Text("توضیحات: ${usage.note}", fontSize = 10.sp, color = customColors.textMuted)
+              }
+
+              Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End
+              ) {
+                IconButton(
+                  onClick = {
+                    editingUsage = usage
+                  },
+                  modifier = Modifier.size(26.dp)
+                ) {
+                  Icon(Icons.Default.Edit, contentDescription = "ویرایش", tint = AccentCyan, modifier = Modifier.size(14.dp))
+                }
               }
             }
           }
