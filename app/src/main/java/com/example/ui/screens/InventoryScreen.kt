@@ -67,6 +67,7 @@ import com.example.ui.theme.StatusSuccess
 import com.example.ui.theme.StatusWarning
 import com.example.viewmodel.ManufacturingViewModel
 import com.example.viewmodel.QuickActionType
+import com.example.ui.dialogs.WaybillDetailsDialog
 
 enum class InventoryCategory(val title: String) {
   FINISHED_GOODS("محصولات آماده"),
