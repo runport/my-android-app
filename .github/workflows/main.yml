@@ -1,7 +1,14 @@
+cd /home/hunter/Desktop/7
+
+cat > .github/workflows/build.yml << 'YAMLEOF'
 name: Build Android APK
 
 on:
   push:
+    branches:
+      - main
+      - feature/**
+  pull_request:
     branches:
       - main
   workflow_dispatch:
@@ -29,12 +36,42 @@ jobs:
           gradle-version: '9.3.1'
 
       - name: Build APK
-        run: gradle assembleDebug --stacktrace
+        run: |
+          gradle assembleDebug --stacktrace --no-daemon 2>&1 | tee build.log
+          exit ${PIPESTATUS[0]}
+
+      - name: Show Kotlin errors
+        if: failure()
+        run: |
+          echo "================================================"
+          echo "KOTLIN COMPILATION ERRORS"
+          echo "================================================"
+          grep -E "^e: |error:|FAILURE" build.log || true
+          echo ""
+          echo "================================================"
+          echo "LAST 80 LINES"
+          echo "================================================"
+          tail -80 build.log
+
+      - name: Upload build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log
+          path: build.log
+          if-no-files-found: warn
+          retention-days: 7
 
       - name: Upload APK
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: app-debug-apk
           path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
           retention-days: 14
+YAMLEOF
+
+git add .github/workflows/build.yml
+git commit -m "ci: show kotlin errors clearly"
+git push origin feature/cutting-parts-workflow
