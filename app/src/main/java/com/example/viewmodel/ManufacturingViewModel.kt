@@ -2640,5 +2640,86 @@ class ManufacturingViewModel(
       }
     }
   }
+
+  // ==========================================
+  // RESERVE ORDER (فاز ۴.۱)
+  // ==========================================
+
+  /**
+   * ثبت سفارش مشتری با رزرو موجودی
+   */
+  fun submitReservedSale(
+    customerId: Long,
+    customerName: String,
+    customerPhone: String,
+    modelCode: String,
+    modelName: String,
+    quantity: Int,
+    unitPrice: Long,
+    discountAmount: Long,
+    paidAmount: Long,
+    notes: String = ""
+  ) {
+    viewModelScope.launch {
+      try {
+        val (success, msg) = repository.createSaleOrderWithReservation(
+          customerId = customerId,
+          customerName = customerName,
+          customerPhone = customerPhone,
+          modelCode = modelCode,
+          modelName = modelName,
+          quantity = quantity,
+          unitPrice = unitPrice,
+          discountAmount = discountAmount,
+          paidAmount = paidAmount,
+          channel = "رزرو",
+          notes = notes
+        )
+        if (success) {
+          closeQuickAction()
+          _notification.value = UiNotification(msg)
+        } else {
+          _notification.value = UiNotification(msg, true)
+        }
+      } catch (e: Exception) {
+        _notification.value = UiNotification("خطا در ثبت رزرو: ${e.localizedMessage}", true)
+      }
+    }
+  }
+
+  /**
+   * پرداخت نهایی سفارش - رزرو را به فروش تبدیل می‌کند
+   */
+  fun finalizeOrderPayment(orderId: Long, additionalPayment: Long) {
+    viewModelScope.launch {
+      try {
+        val (success, msg) = repository.finalizeOrderWithPayment(orderId, additionalPayment)
+        _notification.value = UiNotification(msg, !success)
+      } catch (e: Exception) {
+        _notification.value = UiNotification("خطا در پرداخت نهایی: ${e.localizedMessage}", true)
+      }
+    }
+  }
+
+  /**
+   * لغو سفارش - رزرو را آزاد می‌کند
+   */
+  fun cancelOrderWithRelease(orderId: Long, reason: String = "لغو توسط کاربر") {
+    viewModelScope.launch {
+      try {
+        val (success, msg) = repository.cancelOrderWithRelease(orderId, reason)
+        _notification.value = UiNotification(msg, !success)
+      } catch (e: Exception) {
+        _notification.value = UiNotification("خطا در لغو سفارش: ${e.localizedMessage}", true)
+      }
+    }
+  }
+
+  // دیالوگ رزرو
+  private val _showReserveOrderDialog = MutableStateFlow(false)
+  val showReserveOrderDialog: StateFlow<Boolean> = _showReserveOrderDialog.asStateFlow()
+
+  fun openReserveOrderDialog() { _showReserveOrderDialog.value = true }
+  fun closeReserveOrderDialog() { _showReserveOrderDialog.value = false }
 }
 

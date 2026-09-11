@@ -4346,6 +4346,157 @@ class ManufacturingRepository(private val database: AppDatabase) {
     database.rollUsageDao().deleteRollUsage(usage)
     Pair(true, "مصرف حذف شد و ${"%.2f".format(usage.metersUsed)} متر به طاقه برگشت")
   }
+
+  /**
+   * پرداخت نهایی سفارش رزرو شده - تبدیل به فروش
+   */
+  suspend fun finalizeOrderWithPayment(
+    orderId: Long,
+    additionalPayment: Long
+  ): Pair<Boolean, String> = database.withTransaction {
+    val order = database.saleOrderDao().getOrderById(orderId)
+      ?: return@withTransaction Pair(false, "سفارش یافت نشد")
+
+    if (order.deliveryStatus.contains("فروش نهایی") || order.deliveryStatus.contains("تحویل شده")) {
+      return@withTransaction Pair(false, "این سفارش قبلاً نهایی شده")
+    }
+
+    val today = PersianDateHelper.getCurrentPersianDate()
+    val now = System.currentTimeMillis()
+    val newPaid = order.paidAmount + additionalPayment
+    val totalPrice = order.netTotal
+
+    if (newPaid < totalPrice) {
+      return@withTransaction Pair(
+        false,
+        "مبلغ پرداختی کافی نیست. مانده: ${totalPrice - newPaid}"
+      )
+    }
+
+    // ۱. تغییر وضعیت سفارش
+    val finalStatus = "فروش نهایی - تحویل شده"
+    database.saleOrderDao().updateOrder(
+      order.copy(
+        paidAmount = newPaid,
+        deliveryStatus = finalStatus
+      )
+    )
+
+    // ۲. کاهش موجودی فیزیکی
+    val inv = database.inventoryDao().getByCode(order.modelCode)
+    if (inv != null) {
+      val newReady = (inv.readyForShipment - order.quantity).coerceAtLeast(0)
+      val newReserved = (inv.reservedQuantity - order.quantity).coerceAtLeast(0)
+      database.inventoryDao().updateItem(
+        inv.copy(
+          readyForShipment = newReady,
+          reservedQuantity = newReserved,
+          lastUpdated = today
+        )
+      )
+    }
+
+    // ۳. ثبت پرداخت
+    if (additionalPayment > 0L) {
+      database.customerPaymentDao().insert(
+        CustomerPaymentEntity(
+          customerId = order.customerId ?: 0L,
+          customerName = order.customerName,
+          orderId = order.id,
+          orderNumber = order.orderNumber,
+          amount = additionalPayment,
+          date = today,
+          timestamp = now,
+          paymentMethod = "تسویه نهایی سفارش",
+          referenceNumber = "FINAL-${order.orderNumber}",
+          notes = "پرداخت نهایی و تبدیل رزرو به فروش",
+          recordedBy = "مدیر فروش"
+        )
+      )
+    }
+
+    // ۴. لاگ
+    try {
+      database.auditLogDao().insert(
+        AuditLogEntity(
+          timestamp = now, date = today,
+          entityName = "SaleOrder", entityId = orderId,
+          action = "FINALIZE_ORDER",
+          oldValue = order.deliveryStatus,
+          newValue = finalStatus,
+          reason = "پرداخت نهایی و تبدیل رزرو به فروش",
+          recordedBy = "مدیر فروش"
+        )
+      )
+    } catch (_: Exception) {}
+
+    Pair(true, "سفارش ${order.orderNumber} نهایی شد و فروش قطعی ثبت گردید")
+  }
+
+  /**
+   * لغو سفارش رزرو شده - آزادسازی موجودی رزرو
+   */
+  suspend fun cancelOrderWithRelease(
+    orderId: Long,
+    reason: String
+  ): Pair<Boolean, String> = database.withTransaction {
+    val order = database.saleOrderDao().getOrderById(orderId)
+      ?: return@withTransaction Pair(false, "سفارش یافت نشد")
+
+    val today = PersianDateHelper.getCurrentPersianDate()
+    val now = System.currentTimeMillis()
+
+    // ۱. آزادسازی رزرو
+    val inv = database.inventoryDao().getByCode(order.modelCode)
+    if (inv != null) {
+      val newReserved = (inv.reservedQuantity - order.quantity).coerceAtLeast(0)
+      val newAvailable = inv.availableForSale + order.quantity
+      database.inventoryDao().updateItem(
+        inv.copy(
+          reservedQuantity = newReserved,
+          availableForSale = newAvailable,
+          lastUpdated = today
+        )
+      )
+    }
+
+    // ۲. تغییر وضعیت
+    database.saleOrderDao().updateOrder(
+      order.copy(deliveryStatus = "لغو شده")
+    )
+
+    // ۳. تعدیل بدهی مشتری
+    val cust = if (order.customerId != null) {
+      database.customerDao().getCustomerById(order.customerId)
+    } else {
+      database.customerDao().getCustomerByName(order.customerName)
+    }
+    if (cust != null) {
+      database.customerDao().updateCustomer(
+        cust.copy(
+          totalPurchases = (cust.totalPurchases - order.netTotal).coerceAtLeast(0L),
+          currentDebt = (cust.currentDebt - order.remainingDebt).coerceAtLeast(0L)
+        )
+      )
+    }
+
+    // ۴. لاگ
+    try {
+      database.auditLogDao().insert(
+        AuditLogEntity(
+          timestamp = now, date = today,
+          entityName = "SaleOrder", entityId = orderId,
+          action = "CANCEL_ORDER",
+          oldValue = order.deliveryStatus,
+          newValue = "لغو شده",
+          reason = reason,
+          recordedBy = "مدیر فروش"
+        )
+      )
+    } catch (_: Exception) {}
+
+    Pair(true, "سفارش ${order.orderNumber} لغو شد و ${order.quantity} عدد به موجودی آزاد برگشت")
+  }
 }
 
 
