@@ -537,7 +537,11 @@ data class FabricRollEntity(
   val supplierName: String = "",
   val batchNumber: String = "",
   val shippingExpenseId: Long? = null,
-) {
+
+  val currentPricePerMeter: Long = 0L,
+  val currentPricePerKg: Long = 0L,
+  val lastPriceUpdateDate: String = "",
+  val lastPriceUpdateTimestamp: Long = 0L,) {
   val metersPerKg: Double get() = if (weightKg > 0.0) initialMeters / weightKg else 0.0
   val currentWeightKg: Double get() = if (remainingWeightKg > 0.0) remainingWeightKg else (if (metersPerKg > 0.0) remainingMeters / metersPerKg else 0.0)
   val consumedMeters: Double get() = (initialMeters - remainingMeters).coerceAtLeast(0.0)
@@ -865,7 +869,9 @@ data class MaterialEntity(
   val metersPerKg: Double = 0.0, // اگر به کیلو خریده شود و به متر مصرف شود
   val supplierName: String = "",
   val isActive: Boolean = true,
-) {
+
+  val currentPriceKg: Long = 0L,
+  val priceUpdateNote: String = "",) {
   val isLowStock: Boolean get() = stockQuantity <= minStockThreshold
 }
 
