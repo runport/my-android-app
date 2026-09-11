@@ -288,7 +288,7 @@ private fun ReportsOverviewSection(
     ClickableMetricHeroCard(
       title = "سود خالص دوره (Net Profit)",
       amount = FinancialCalculationService.formatCurrency(profit.netProfit),
-      subtitle = "حاشیه سود واقعی: ${profit.profitMarginPercent.toInt()}٪ • برای کاوش اجزا کلیک کنید",
+      subtitle = "حاشیه سود واقعی: ${profit.ChartFormatter.formatPercent(profitMarginPercent)} • برای کاوش اجزا کلیک کنید",
       badge = "کاوش تفصیلی 🔍",
       accentColor = StatusSuccess,
       onClick = { onDrillDown("NET_PROFIT") }
@@ -1175,7 +1175,7 @@ private fun ProfitReportSection(
           )
         }
         Text(
-          text = "${report.profitMarginPercent.toInt()}٪",
+          text = "${report.ChartFormatter.formatPercent(profitMarginPercent)}",
           style = MaterialTheme.typography.headlineSmall,
           color = StatusSuccess,
           fontWeight = FontWeight.ExtraBold
