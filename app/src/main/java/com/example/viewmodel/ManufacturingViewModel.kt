@@ -2672,8 +2672,7 @@ class ManufacturingViewModel(
           unitPrice = unitPrice,
           discountAmount = discountAmount,
           paidAmount = paidAmount,
-          channel = "رزرو",
-          notes = notes
+          channel = "رزرو"
         )
         if (success) {
           closeQuickAction()
