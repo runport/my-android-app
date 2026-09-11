@@ -920,6 +920,17 @@ interface BaseCostConfigDao {
 
   @Query("DELETE FROM base_cost_configs WHERE id = :id")
   suspend fun deleteById(id: Long)
+
+  // ===== Price Update Queries (روزآمدسازی قیمت بدون خرید) =====
+
+  @Query("UPDATE fabric_rolls SET currentPricePerMeter = :pricePerMeter, currentPricePerKg = :pricePerKg, lastPriceUpdateDate = :date, lastPriceUpdateTimestamp = :timestamp WHERE id = :rollId")
+  suspend fun updateRollCurrentPrice(rollId: Long, pricePerMeter: Long, pricePerKg: Long, date: String, timestamp: Long)
+
+  @Query("UPDATE materials SET currentPrice = :newPrice, currentPriceKg = :priceKg, lastPriceChangeDate = :date, lastPriceChangeTimestamp = :timestamp, priceUpdateNote = :note WHERE id = :materialId")
+  suspend fun updateMaterialCurrentPrice(materialId: Long, newPrice: Long, priceKg: Long, date: String, timestamp: Long, note: String)
+
+  @Query("SELECT * FROM fabric_rolls WHERE id = :rollId")
+  suspend fun getRollByIdOnce(rollId: Long): FabricRollEntity?
 }
 
 

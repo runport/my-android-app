@@ -25,6 +25,7 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Inventory2
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.LocalShipping
 import androidx.compose.material.icons.filled.Scale
 import androidx.compose.material.icons.filled.WarningAmber
@@ -389,6 +390,19 @@ fun InventoryScreen(
               },
               onEdit = {
                 viewModel.startEditFabricRoll(roll)
+              },
+              onUpdatePrice = {
+                viewModel.openPriceUpdateDialog(
+                  com.example.viewmodel.PriceUpdateTarget(
+                    type = com.example.viewmodel.PriceUpdateType.FABRIC_ROLL,
+                    id = roll.id,
+                    title = "طاقه ${roll.rollCode} - ${roll.fabricType}",
+                    currentPricePerMeter = if (roll.currentPricePerMeter > 0L) roll.currentPricePerMeter else roll.buyPricePerMeter,
+                    currentPricePerKg = if (roll.currentPricePerKg > 0L) roll.currentPricePerKg else roll.buyPricePerKg,
+                    metersPerKg = roll.metersPerKg,
+                    unit = "متر"
+                  )
+                )
               }
             )
           }
@@ -761,7 +775,8 @@ fun FabricRollInventoryCard(
   roll: FabricRollEntity,
   onConsume: () -> Unit,
   onHistory: () -> Unit,
-  onEdit: () -> Unit = {}
+  onEdit: () -> Unit = {},
+  onUpdatePrice: () -> Unit = {}
 ) {
   val customColors = LocalCustomColors.current
   val remainingPercent = if (roll.initialMeters > 0) (roll.remainingMeters / roll.initialMeters).toFloat() else 0f
@@ -804,6 +819,9 @@ fun FabricRollInventoryCard(
         }
 
         Row(verticalAlignment = Alignment.CenterVertically) {
+          IconButton(onClick = onUpdatePrice) {
+            Icon(Icons.Default.Refresh, contentDescription = "به‌روزرسانی قیمت روز", tint = StatusSuccess)
+          }
           IconButton(onClick = onEdit) {
             Icon(Icons.Default.Edit, contentDescription = "ویرایش", tint = AccentIndigo)
           }

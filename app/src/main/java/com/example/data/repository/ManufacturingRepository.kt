@@ -3958,6 +3958,193 @@ class ManufacturingRepository(private val database: AppDatabase) {
       )
     }
   }
+
+  // ==========================================
+  // PRICE UPDATE (روزآمدسازی قیمت بدون خرید)
+  // ==========================================
+
+  /**
+   * به‌روزرسانی قیمت روز یک طاقه بدون ثبت خرید جدید.
+   * موجودی فیزیکی دست نمی‌خورد؛ فقط قیمت روز و بهای محاسباتی.
+   */
+  suspend fun updateFabricRollCurrentPrice(
+    rollId: Long, newPricePerMeter: Long, newPricePerKg: Long = 0L,
+    reason: String = "تغییر قیمت بازار", operator: String = "مدیر کارگاه"
+  ): Pair<Boolean, String> = database.withTransaction {
+    val roll = database.fabricRollDao().getRollById(rollId)
+      ?: return@withTransaction Pair(false, "طاقه یافت نشد")
+    if (newPricePerMeter <= 0L && newPricePerKg <= 0L) {
+      return@withTransaction Pair(false, "قیمت جدید باید بیشتر از صفر باشد")
+    }
+    val finalPricePerMeter = if (newPricePerMeter > 0L) newPricePerMeter else {
+      if (roll.metersPerKg > 0.0) (newPricePerKg / roll.metersPerKg).toLong() else roll.buyPricePerMeter
+    }
+    val finalPricePerKg = if (newPricePerKg > 0L) newPricePerKg else {
+      (finalPricePerMeter * roll.metersPerKg).toLong()
+    }
+    val oldPriceM = if (roll.currentPricePerMeter > 0L) roll.currentPricePerMeter else roll.buyPricePerMeter
+    val oldPriceKg = if (roll.currentPricePerKg > 0L) roll.currentPricePerKg else roll.buyPricePerKg
+    if (oldPriceM == finalPricePerMeter && oldPriceKg == finalPricePerKg) {
+      return@withTransaction Pair(true, "قیمت تغییری نکرد")
+    }
+
+    val today = PersianDateHelper.getTodayPersianDate()
+    val now = System.currentTimeMillis()
+
+    database.fabricRollDao().updateRoll(
+      roll.copy(
+        currentPricePerMeter = finalPricePerMeter,
+        currentPricePerKg = finalPricePerKg,
+        lastPriceUpdateDate = today,
+        lastPriceUpdateTimestamp = now
+      )
+    )
+
+    // ثبت در تاریخچه قیمت
+    val changeM = finalPricePerMeter - oldPriceM
+    val changePercent = if (oldPriceM > 0L) (changeM.toDouble() / oldPriceM) * 100.0 else 0.0
+    try {
+      database.materialPriceHistoryDao().insert(
+        MaterialPriceHistoryEntity(
+          materialId = roll.id,
+          materialName = "${roll.fabricType} - طاقه ${roll.rollCode}",
+          oldPrice = oldPriceM,
+          newPrice = finalPricePerMeter,
+          date = today,
+          timestamp = now,
+          changeAmount = changeM,
+          changePercent = changePercent,
+          reason = reason,
+          source = "FABRIC_ROLL_PRICE_UPDATE",
+          supplierName = roll.supplierName,
+          recordedBy = operator
+        )
+      )
+    } catch (_: Exception) {}
+
+    // به‌روزرسانی بهای محصولات در جریان که از این طاقه مصرف کرده‌اند
+    updateInProgressProductsAfterPriceChange(roll.id, finalPricePerMeter, operator)
+
+    Pair(true, "قیمت طاقه ${roll.rollCode} به‌روزرسانی شد (${finalPricePerMeter} تومان/متر)")
+  }
+
+  /**
+   * به‌روزرسانی قیمت روز یک ماده اولیه/ملزوم
+   */
+  suspend fun updateMaterialCurrentPrice(
+    materialId: Long, newPrice: Long, reason: String = "تغییر قیمت بازار",
+    operator: String = "مدیر کارگاه"
+  ): Pair<Boolean, String> = database.withTransaction {
+    val mat = database.materialDao().getById(materialId)
+      ?: return@withTransaction Pair(false, "ماده یافت نشد")
+    if (newPrice <= 0L) return@withTransaction Pair(false, "قیمت باید بیشتر از صفر باشد")
+    if (mat.currentPrice == newPrice) {
+      return@withTransaction Pair(true, "قیمت تغییری نکرد")
+    }
+    val today = PersianDateHelper.getTodayPersianDate()
+    val now = System.currentTimeMillis()
+
+    database.materialDao().update(
+      mat.copy(
+        currentPrice = newPrice,
+        lastPriceSource = "MARKET_UPDATE",
+        lastPriceChangeDate = today,
+        lastPriceChangeTimestamp = now
+      )
+    )
+
+    try {
+      val changeAmount = newPrice - mat.currentPrice
+      database.materialPriceHistoryDao().insert(
+        MaterialPriceHistoryEntity(
+          materialId = mat.id,
+          materialName = mat.name,
+          oldPrice = mat.currentPrice,
+          newPrice = newPrice,
+          date = today,
+          timestamp = now,
+          changeAmount = changeAmount,
+          changePercent = if (mat.currentPrice > 0L) (changeAmount.toDouble() / mat.currentPrice) * 100.0 else 0.0,
+          reason = reason,
+          source = "MATERIAL_PRICE_UPDATE",
+          supplierName = mat.supplierName,
+          recordedBy = operator
+        )
+      )
+    } catch (_: Exception) {}
+
+    // به‌روزرسانی BOM استفاده‌کننده
+    updateProductsUsingMaterial(materialId, newPrice, operator)
+    Pair(true, "قیمت «${mat.name}» به‌روزرسانی شد")
+  }
+
+  /**
+   * به‌روزرسانی بهای محصولات در جریان که از این طاقه استفاده کرده‌اند
+   */
+  private suspend fun updateInProgressProductsAfterPriceChange(
+    rollId: Long, newPricePerMeter: Long, operator: String
+  ) {
+    try {
+      val allCuttings = database.cuttingDao().getAllCuttings().firstOrNull() ?: emptyList()
+      val affected = allCuttings.filter { it.rollId == rollId && !it.isStockAdded }
+      val today = PersianDateHelper.getTodayPersianDate()
+      val now = System.currentTimeMillis()
+
+      affected.forEach { part ->
+        val newFabricCost = (part.metersUsed * newPricePerMeter).toLong()
+        val newTotal = newFabricCost + part.allocatedShippingCost +
+          part.accessoriesCost + part.tailorCost + part.overheadCost + part.otherDirectCost
+        database.cuttingDao().updateCutting(
+          part.copy(fabricCost = newFabricCost, totalCost = newTotal)
+        )
+        try {
+          database.auditLogDao().insert(
+            AuditLogEntity(
+              timestamp = now, date = today, entityName = "CuttingPart",
+              entityId = part.id, action = "PRICE_RECALC",
+              oldValue = "بهای قبلی: ${part.totalCost}",
+              newValue = "بهای جدید: $newTotal (پس از به‌روزرسانی قیمت طاقه)",
+              reason = "به‌روزرسانی خودکار بر اساس آخرین قیمت ثبت‌شده",
+              recordedBy = operator
+            )
+          )
+        } catch (_: Exception) {}
+      }
+    } catch (_: Exception) {}
+  }
+
+  /**
+   * به‌روزرسانی BOM و بهای محصولات استفاده‌کننده از این ماده
+   */
+  private suspend fun updateProductsUsingMaterial(
+    materialId: Long, newPrice: Long, operator: String
+  ) {
+    try {
+      val boms = database.productBOMDao().getBOMsUsingMaterial(materialId)
+      val productIds = boms.map { it.productId }.distinct()
+      val today = PersianDateHelper.getTodayPersianDate()
+      val now = System.currentTimeMillis()
+
+      productIds.forEach { pid ->
+        val product = database.productDao().getProductById(pid) ?: return@forEach
+        val productBoms = database.productBOMDao().getBOMListForProduct(pid)
+        var newCost = 0L
+        productBoms.forEach { b ->
+          val price = if (b.materialId == materialId) newPrice
+                     else database.materialDao().getById(b.materialId)?.currentPrice ?: b.unitRate
+          newCost += (b.standardQuantity * price).toLong()
+        }
+        val fullCost = newCost + product.sewingWage + product.allocatedFreightCost + product.overheadCost
+        database.productDao().update(
+          product.copy(
+            currentCostPrice = fullCost,
+            lastPriceUpdateDate = today,
+            lastPriceUpdateTimestamp = now
+          )
+        )
+      }
+    } catch (_: Exception) {}
+  }
 }
 
 
