@@ -109,6 +109,19 @@ interface CuttingDao {
 
   @Query("DELETE FROM cutting_orders WHERE id = :id")
   suspend fun deleteById(id: Long)
+  // ===== Cutting Parts Workflow Queries =====
+
+  @Query("SELECT * FROM cutting_orders WHERE rollId = :rollId ORDER BY partNumber ASC")
+  fun getCuttingPartsByRoll(rollId: Long): Flow<List<CuttingEntity>>
+
+  @Query("SELECT * FROM cutting_orders WHERE status = :status ORDER BY timestamp DESC")
+  fun getCuttingPartsByStatus(status: String): Flow<List<CuttingEntity>>
+
+  @Query("SELECT COALESCE(MAX(partNumber), 0) FROM cutting_orders WHERE rollId = :rollId")
+  suspend fun getMaxPartNumber(rollId: Long): Int
+
+  @Query("SELECT * FROM cutting_orders WHERE status IN ('برش خورده', 'در حال دوخت', 'کار آماده') ORDER BY timestamp DESC")
+  fun getActiveParts(): Flow<List<CuttingEntity>>
 }
 
 @Dao

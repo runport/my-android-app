@@ -134,7 +134,7 @@ import kotlinx.coroutines.launch
     WaybillItemEntity::class,
     BaseCostConfigEntity::class,
   ],
-  version = 9,
+  version = 10,
   exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -824,6 +824,14 @@ abstract class AppDatabase : RoomDatabase() {
       }
     }
 
+    val MIGRATION_9_10 = object : Migration(9, 10) {
+      override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("UPDATE cutting_orders SET status = 'برش خورده' WHERE status IN ('برش‌خورده', 'برش‌خورده - آماده دوخت', 'در حال برش')")
+        db.execSQL("UPDATE cutting_orders SET status = 'کار آماده' WHERE status IN ('تکمیل شده', 'آماده دوخت')")
+        db.execSQL("UPDATE cutting_orders SET partNumber = 1 WHERE partNumber = 0")
+      }
+    }
+
     fun getDatabase(
       context: Context,
       scope: CoroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
@@ -834,7 +842,7 @@ abstract class AppDatabase : RoomDatabase() {
           AppDatabase::class.java,
           "manufacturing_executive.db"
         )
-          .addMigrations(MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9)
+          .addMigrations(MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10)
           .addCallback(DatabaseCallback(scope))
           .build()
         INSTANCE = instance

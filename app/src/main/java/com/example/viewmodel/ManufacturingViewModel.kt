@@ -381,6 +381,66 @@ class ManufacturingViewModel(
   val completedCuttings: StateFlow<List<CuttingEntity>> = repository.completedCuttings
     .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+  val cutButNotSewnParts: StateFlow<List<CuttingEntity>> =
+    repository.cuttingPartsByStatus(CuttingEntity.STATUS_CUT)
+      .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+  val sewingParts: StateFlow<List<CuttingEntity>> =
+    repository.cuttingPartsByStatus(CuttingEntity.STATUS_SEWING)
+      .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+  val readyParts: StateFlow<List<CuttingEntity>> =
+    repository.cuttingPartsByStatus(CuttingEntity.STATUS_READY)
+      .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+  val activeParts: StateFlow<List<CuttingEntity>> =
+    repository.activeCuttingParts()
+      .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+  fun getCuttingPartsForRoll(rollId: Long): StateFlow<List<CuttingEntity>> =
+    repository.cuttingPartsByRoll(rollId)
+      .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+  fun updateCuttingPartStatus(partId: Long, newStatus: String, note: String = "") {
+    viewModelScope.launch {
+      try {
+        val (success, msg) = repository.updateCuttingPartStatus(partId, newStatus, note)
+        _notification.value = UiNotification(msg, !success)
+      } catch (e: Exception) {
+        _notification.value = UiNotification("خطا: ${e.localizedMessage}", true)
+      }
+    }
+  }
+
+  fun buildAutoPartTitle(partNumber: Int): String = when (partNumber) {
+    1 -> "برش و تولید اول"
+    2 -> "برش و تولید دوم"
+    3 -> "برش و تولید سوم"
+    4 -> "برش و تولید چهارم"
+    5 -> "برش و تولید پنجم"
+    else -> "برش و تولید شماره $partNumber"
+  }
+
+  fun transferAllReadyParts() {
+    viewModelScope.launch {
+      try {
+        val ready = readyParts.value
+        if (ready.isEmpty()) {
+          _notification.value = UiNotification("پارت آماده‌ای نیست", true)
+          return@launch
+        }
+        var okCount = 0
+        ready.forEach { part ->
+          val (ok, _) = repository.updateCuttingPartStatus(part.id, CuttingEntity.STATUS_READY, "انتقال گروهی")
+          if (ok) okCount++
+        }
+        _notification.value = UiNotification("$okCount پارت منتقل شد")
+      } catch (e: Exception) {
+        _notification.value = UiNotification("خطا: ${e.localizedMessage}", true)
+      }
+    }
+  }
+
   val currentUserRole = MutableStateFlow(UserRole.ADMIN)
 
   fun setCurrentUserRole(role: UserRole) {
