@@ -114,6 +114,8 @@ import com.example.viewmodel.ManufacturingViewModel
 import com.example.viewmodel.MoreSubSection
 import com.example.viewmodel.QuickActionType
 import com.example.ui.screens.ReadyGoodsScreen
+import com.example.ui.dialogs.DeleteAllDataConfirmDialog
+import com.example.ui.dialogs.RestoreFromFileDialog
 
 @Composable
 fun MoreHubScreen(
@@ -499,83 +501,22 @@ fun MoreHubScreen(
   }
 
   if (showResetConfirmDialog) {
-    AlertDialog(
-      onDismissRequest = { showResetConfirmDialog = false },
-      title = {
-        Text("هشدار بازنشانی دائم داده‌ها", color = StatusDanger, fontWeight = FontWeight.Bold)
+    DeleteAllDataConfirmDialog(
+      onConfirm = {
+        viewModel.resetToDemoData()
+        showResetConfirmDialog = false
       },
-      text = {
-        Text(
-          "آیا از پاک کردن دائم کلیه داده‌ها و بازنشانی داده‌های نمونه و دمو اولیه کارخانه مطمئن هستید؟ تمام داده‌های فعلی جایگزین خواهند شد.",
-          color = customColors.textSecondary,
-          style = MaterialTheme.typography.bodyMedium
-        )
-      },
-      confirmButton = {
-        Button(
-          onClick = {
-            showResetConfirmDialog = false
-            viewModel.resetToDemoData()
-          },
-          colors = ButtonDefaults.buttonColors(containerColor = StatusDanger)
-        ) {
-          Text("تأیید و بازنشانی به داده‌های نمونه", fontWeight = FontWeight.Bold)
-        }
-      },
-      dismissButton = {
-        TextButton(onClick = { showResetConfirmDialog = false }) {
-          Text("انصراف", color = customColors.textMuted)
-        }
-      },
-      containerColor = customColors.cardElevated
+      onDismiss = { showResetConfirmDialog = false }
     )
   }
 
   if (showRestoreBackupDialog) {
-    var jsonText by remember { mutableStateOf("") }
-    AlertDialog(
-      onDismissRequest = { showRestoreBackupDialog = false },
-      title = {
-        Text("بازیابی اطلاعات از فایل پشتیبان JSON", fontWeight = FontWeight.Bold, color = customColors.textPrimary)
+    RestoreFromFileDialog(
+      onConfirm = { jsonText ->
+        viewModel.restoreBackupData(jsonText)
+        showRestoreBackupDialog = false
       },
-      text = {
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-          Text(
-            "متن فایل پشتیبان (JSON) را در کادر زیر جای‌گذاری (Paste) کنید:",
-            style = MaterialTheme.typography.bodySmall,
-            color = customColors.textSecondary
-          )
-          OutlinedTextField(
-            value = jsonText,
-            onValueChange = { jsonText = it },
-            modifier = Modifier
-              .fillMaxWidth()
-              .height(140.dp),
-            placeholder = { Text("محتوای فایل JSON پشتیبان...", fontSize = 11.sp, color = customColors.textMuted) },
-            textStyle = MaterialTheme.typography.bodySmall
-          )
-        }
-      },
-      confirmButton = {
-        Button(
-          onClick = {
-            if (jsonText.isNotBlank()) {
-              showRestoreBackupDialog = false
-              viewModel.restoreBackupData(jsonText)
-            }
-          },
-          enabled = jsonText.isNotBlank(),
-          colors = ButtonDefaults.buttonColors(containerColor = AccentIndigo)
-        ) {
-          Text("شروع بازیابی اطلاعات", fontWeight = FontWeight.Bold)
-        }
-      },
-      dismissButton = {
-        TextButton(onClick = { showRestoreBackupDialog = false }) {
-          Text("انصراف", color = customColors.textMuted)
-        }
-      },
-      containerColor = customColors.cardElevated
+      onDismiss = { showRestoreBackupDialog = false }
     )
   }
 
