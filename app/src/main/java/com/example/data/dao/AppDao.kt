@@ -326,6 +326,15 @@ interface RollUsageDao {
 
   @Insert(onConflict = OnConflictStrategy.REPLACE)
   suspend fun insertAll(usages: List<RollUsageEntity>)
+
+  @Update
+  suspend fun updateRollUsage(usage: RollUsageEntity)
+
+  @Delete
+  suspend fun deleteRollUsage(usage: RollUsageEntity)
+
+  @Query("SELECT * FROM roll_usages WHERE id = :id")
+  suspend fun getUsageById(id: Long): RollUsageEntity?
 }
 
 @Dao

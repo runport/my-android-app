@@ -4250,6 +4250,102 @@ class ManufacturingRepository(private val database: AppDatabase) {
       emptyList()
     }
   }
+
+  // ==========================================
+  // ROLL USAGE CRUD (ویرایش و حذف مصرف طاقه)
+  // ==========================================
+
+  /**
+   * ویرایش یک مصرف ثبت‌شده
+   * اختلاف مقدار مصرف را روی موجودی طاقه اعمال می‌کند
+   */
+  suspend fun updateRollUsage(
+    usageId: Long,
+    newMetersUsed: Double,
+    newWeightKgUsed: Double,
+    newModelName: String,
+    newNote: String
+  ): Pair<Boolean, String> = database.withTransaction {
+    val usage = database.rollUsageDao().getUsageById(usageId)
+      ?: return@withTransaction Pair(false, "مصرف یافت نشد")
+    val roll = database.fabricRollDao().getRollById(usage.rollId)
+      ?: return@withTransaction Pair(false, "طاقه یافت نشد")
+
+    // اختلاف متری: مثبت = مصرف بیشتر، منفی = مصرف کمتر
+    val metersDiff = newMetersUsed - usage.metersUsed
+
+    // موجودی جدید طاقه (اگر مصرف بیشتر شد، کم می‌شود)
+    val newRemaining = roll.remainingMeters - metersDiff
+    if (newRemaining < 0) {
+      return@withTransaction Pair(
+        false,
+        "موجودی طاقه کافی نیست. باقیمانده فعلی: ${"%.2f".format(roll.remainingMeters)} متر"
+      )
+    }
+
+    // محاسبه مجدد هزینه‌ها
+    val newFabricCost = (newMetersUsed * roll.buyPricePerMeter).toLong()
+    val newShippingCost = if (roll.initialMeters > 0)
+      ((newMetersUsed / roll.initialMeters) * roll.allocatedShippingCost).toLong()
+    else 0L
+
+    // به‌روزرسانی طاقه
+    val metersPerKg = roll.metersPerKg
+    val newRemainingKg = if (metersPerKg > 0) newRemaining / metersPerKg else 0.0
+    val newStatus = if (newRemaining <= 0.5) "پایان یافته" else "در حال مصرف"
+
+    database.fabricRollDao().updateRoll(
+      roll.copy(
+        remainingMeters = newRemaining,
+        remainingWeightKg = newRemainingKg,
+        status = newStatus
+      )
+    )
+
+    // به‌روزرسانی رکورد مصرف
+    database.rollUsageDao().updateRollUsage(
+      usage.copy(
+        metersUsed = newMetersUsed,
+        weightKgUsed = newWeightKgUsed,
+        modelName = newModelName,
+        note = newNote,
+        allocatedFabricCost = newFabricCost,
+        allocatedShippingCost = newShippingCost
+      )
+    )
+
+    Pair(true, "مصرف با موفقیت ویرایش شد. باقیمانده طاقه: ${"%.2f".format(newRemaining)} متر")
+  }
+
+  /**
+   * حذف یک مصرف - موجودی طاقه برمی‌گردد
+   */
+  suspend fun deleteRollUsage(usageId: Long): Pair<Boolean, String> = database.withTransaction {
+    val usage = database.rollUsageDao().getUsageById(usageId)
+      ?: return@withTransaction Pair(false, "مصرف یافت نشد")
+    val roll = database.fabricRollDao().getRollById(usage.rollId)
+
+    // برگرداندن متر به طاقه
+    if (roll != null) {
+      val restoredMeters = roll.remainingMeters + usage.metersUsed
+      val metersPerKg = roll.metersPerKg
+      val restoredKg = if (metersPerKg > 0) restoredMeters / metersPerKg else 0.0
+      val newStatus = if (restoredMeters <= 0.5) "پایان یافته"
+                     else if (restoredMeters >= roll.initialMeters - 0.5) "موجود"
+                     else "در حال مصرف"
+
+      database.fabricRollDao().updateRoll(
+        roll.copy(
+          remainingMeters = restoredMeters,
+          remainingWeightKg = restoredKg,
+          status = newStatus
+        )
+      )
+    }
+
+    database.rollUsageDao().deleteRollUsage(usage)
+    Pair(true, "مصرف حذف شد و ${"%.2f".format(usage.metersUsed)} متر به طاقه برگشت")
+  }
 }
 
 

@@ -4879,6 +4879,9 @@ fun RollHistoryModal(
     } else {
       Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         usages.forEach { usage ->
+          var showEditDialog by remember(usage.id) { mutableStateOf(false) }
+          var showDeleteConfirm by remember(usage.id) { mutableStateOf(false) }
+
           Box(
             modifier = Modifier
               .fillMaxWidth()

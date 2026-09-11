@@ -2606,5 +2606,39 @@ class ManufacturingViewModel(
   }
 
   fun getRepository(): com.example.data.repository.ManufacturingRepository = repository
+
+  // ==========================================
+  // ROLL USAGE ACTIONS
+  // ==========================================
+
+  fun updateRollUsageAction(
+    usageId: Long,
+    newMetersUsed: Double,
+    newWeightKgUsed: Double,
+    newModelName: String,
+    newNote: String
+  ) {
+    viewModelScope.launch {
+      try {
+        val (success, msg) = repository.updateRollUsage(
+          usageId, newMetersUsed, newWeightKgUsed, newModelName, newNote
+        )
+        _notification.value = UiNotification(msg, !success)
+      } catch (e: Exception) {
+        _notification.value = UiNotification("خطا در ویرایش: ${e.localizedMessage}", true)
+      }
+    }
+  }
+
+  fun deleteRollUsageAction(usageId: Long) {
+    viewModelScope.launch {
+      try {
+        val (success, msg) = repository.deleteRollUsage(usageId)
+        _notification.value = UiNotification(msg, !success)
+      } catch (e: Exception) {
+        _notification.value = UiNotification("خطا در حذف: ${e.localizedMessage}", true)
+      }
+    }
+  }
 }
 
