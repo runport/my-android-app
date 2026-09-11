@@ -6009,11 +6009,13 @@ fun PriceUpdateDialog(
 ) {
   val customColors = LocalCustomColors.current
   val target by viewModel.priceUpdateTarget.collectAsState()
-  val t = target ?: return
 
-  var pricePerMeterText by remember { mutableStateOf(t.currentPricePerMeter.toString()) }
-  var pricePerKgText by remember { mutableStateOf(t.currentPricePerKg.toString()) }
-  var reasonText by remember { mutableStateOf("تغییر قیمت بازار") }
+  if (target == null) return
+  val t = target!!
+
+  var pricePerMeterText by remember(t.id) { mutableStateOf(t.currentPricePerMeter.toString()) }
+  var pricePerKgText by remember(t.id) { mutableStateOf(t.currentPricePerKg.toString()) }
+  var reasonText by remember(t.id) { mutableStateOf("تغییر قیمت بازار") }
 
   val isFabricRoll = t.type == com.example.viewmodel.PriceUpdateType.FABRIC_ROLL
 
