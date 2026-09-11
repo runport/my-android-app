@@ -88,6 +88,7 @@ import com.example.viewmodel.MainTab
 import com.example.viewmodel.ManufacturingViewModel
 import com.example.viewmodel.MoreSubSection
 import com.example.viewmodel.QuickActionType
+import com.example.util.ChartFormatter
 
 @Composable
 fun DashboardScreen(

@@ -72,6 +72,7 @@ import com.example.ui.theme.StatusSuccess
 import com.example.ui.theme.StatusWarning
 import com.example.viewmodel.ManufacturingViewModel
 import com.example.viewmodel.ReportCategory
+import com.example.util.ChartFormatter
 
 @Composable
 fun AnalyticsScreen(
