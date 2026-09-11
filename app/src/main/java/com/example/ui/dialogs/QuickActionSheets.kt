@@ -378,6 +378,7 @@ fun QuickActionsModalBottomSheet(
             onBack = { viewModel.openQuickAction(QuickActionType.WAREHOUSE_HUB) }
           )
         }
+
       }
     }
     Spacer(modifier = Modifier.height(28.dp))
@@ -5997,4 +5998,137 @@ fun QuickInventoryAuditForm(
   }
 }
 
+/**
+ * دیالوگ به‌روزرسانی قیمت روز (بدون ثبت خرید جدید)
+ * بند ۳۹: کاربر می‌تواند قیمت روز را تغییر دهد بدون اینکه موجودی فیزیکی تغییر کند
+ */
+@Composable
+fun PriceUpdateDialog(
+  viewModel: ManufacturingViewModel,
+  onDismiss: () -> Unit
+) {
+  val customColors = LocalCustomColors.current
+  val target by viewModel.priceUpdateTarget.collectAsState()
+  val t = target ?: return
 
+  var pricePerMeterText by remember { mutableStateOf(t.currentPricePerMeter.toString()) }
+  var pricePerKgText by remember { mutableStateOf(t.currentPricePerKg.toString()) }
+  var reasonText by remember { mutableStateOf("تغییر قیمت بازار") }
+
+  val isFabricRoll = t.type == com.example.viewmodel.PriceUpdateType.FABRIC_ROLL
+
+  AlertDialog(
+    onDismissRequest = onDismiss,
+    title = {
+      Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text("به‌روزرسانی قیمت روز", fontWeight = FontWeight.Bold, color = customColors.textPrimary)
+        Text(t.title, fontSize = 11.sp, color = customColors.textMuted)
+      }
+    },
+    text = {
+      Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        // اطلاعات فعلی
+        Box(
+          modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(8.dp))
+            .background(customColors.secondaryBg)
+            .padding(10.dp)
+        ) {
+          Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text("قیمت قبلی:", fontSize = 11.sp, color = customColors.textMuted)
+            if (isFabricRoll) {
+              Text("متر: ${CurrencyHelper.formatToman(t.currentPricePerMeter)} • کیلو: ${CurrencyHelper.formatToman(t.currentPricePerKg)}",
+                fontSize = 12.sp, color = customColors.textPrimary, fontWeight = FontWeight.Bold)
+            } else {
+              Text("هر ${t.unit}: ${CurrencyHelper.formatToman(t.currentPricePerMeter)}",
+                fontSize = 12.sp, color = customColors.textPrimary, fontWeight = FontWeight.Bold)
+            }
+          }
+        }
+
+        // فیلدهای جدید
+        if (isFabricRoll) {
+          ExecutiveTextField(
+            label = "قیمت جدید هر متر (تومان)",
+            value = pricePerMeterText,
+            keyboardType = KeyboardType.Number,
+            onValueChange = {
+              pricePerMeterText = it
+              val pm = it.toLongOrNull() ?: 0L
+              if (pm > 0L && t.metersPerKg > 0.0) {
+                pricePerKgText = (pm * t.metersPerKg).toLong().toString()
+              }
+            }
+          )
+          ExecutiveTextField(
+            label = "قیمت جدید هر کیلو (تومان)",
+            value = pricePerKgText,
+            keyboardType = KeyboardType.Number,
+            onValueChange = {
+              pricePerKgText = it
+              val pk = it.toLongOrNull() ?: 0L
+              if (pk > 0L && t.metersPerKg > 0.0) {
+                pricePerMeterText = (pk / t.metersPerKg).toLong().toString()
+              }
+            }
+          )
+        } else {
+          ExecutiveTextField(
+            label = "قیمت جدید هر ${t.unit} (تومان)",
+            value = pricePerMeterText,
+            keyboardType = KeyboardType.Number,
+            onValueChange = { pricePerMeterText = it }
+          )
+        }
+
+        ExecutiveTextField(
+          label = "دلیل تغییر قیمت",
+          value = reasonText,
+          onValueChange = { reasonText = it }
+        )
+
+        // هشدار
+        Box(
+          modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(8.dp))
+            .background(StatusWarning.copy(alpha = 0.12f))
+            .padding(8.dp)
+        ) {
+          Text(
+            "⚠ این عملیات موجودی فیزیکی را تغییر نمی‌دهد. فقط قیمت روز و بهای محاسباتی به‌روزرسانی می‌شود.",
+            fontSize = 11.sp, color = StatusWarning
+          )
+        }
+      }
+    },
+    confirmButton = {
+      Button(
+        onClick = {
+          val pm = pricePerMeterText.toLongOrNull() ?: 0L
+          val pk = pricePerKgText.toLongOrNull() ?: 0L
+          if (isFabricRoll) {
+            viewModel.updateRollPrice(t.id, pm, pk, reasonText)
+          } else {
+            viewModel.updateMaterialPrice(t.id, pm, reasonText)
+          }
+          viewModel.closePriceUpdateDialog()
+          onDismiss()
+        },
+        colors = ButtonDefaults.buttonColors(containerColor = StatusSuccess)
+      ) {
+        Text("ثبت قیمت روز", fontWeight = FontWeight.Bold)
+      }
+    },
+    dismissButton = {
+      TextButton(onClick = {
+        viewModel.closePriceUpdateDialog()
+        onDismiss()
+      }) {
+        Text("انصراف", color = customColors.textMuted)
+      }
+    },
+    containerColor = customColors.cardElevated
+  )
+}

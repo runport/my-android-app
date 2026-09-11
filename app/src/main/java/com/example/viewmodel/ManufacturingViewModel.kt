@@ -135,6 +135,18 @@ data class UiNotification(
   val isError: Boolean = false
 )
 
+data class PriceUpdateTarget(
+  val type: PriceUpdateType,
+  val id: Long,
+  val title: String,
+  val currentPricePerMeter: Long = 0L,
+  val currentPricePerKg: Long = 0L,
+  val metersPerKg: Double = 0.0,
+  val unit: String = "متر"
+)
+
+enum class PriceUpdateType { FABRIC_ROLL, MATERIAL }
+
 class ManufacturingViewModel(
   private val repository: ManufacturingRepository
 ) : ViewModel() {
@@ -2511,5 +2523,38 @@ class ManufacturingViewModel(
       }
     }
   }
+
+  // ==========================================
+  // PRICE UPDATE ACTIONS
+  // ==========================================
+
+  fun updateRollPrice(rollId: Long, newPricePerMeter: Long, newPricePerKg: Long = 0L, reason: String = "تغییر قیمت بازار") {
+    viewModelScope.launch {
+      try {
+        val (success, msg) = repository.updateFabricRollCurrentPrice(rollId, newPricePerMeter, newPricePerKg, reason)
+        _notification.value = UiNotification(msg, !success)
+      } catch (e: Exception) {
+        _notification.value = UiNotification("خطا در به‌روزرسانی قیمت: ${e.localizedMessage}", true)
+      }
+    }
+  }
+
+  fun updateMaterialPrice(materialId: Long, newPrice: Long, reason: String = "تغییر قیمت بازار") {
+    viewModelScope.launch {
+      try {
+        val (success, msg) = repository.updateMaterialCurrentPrice(materialId, newPrice, reason)
+        _notification.value = UiNotification(msg, !success)
+      } catch (e: Exception) {
+        _notification.value = UiNotification("خطا در به‌روزرسانی قیمت: ${e.localizedMessage}", true)
+      }
+    }
+  }
+
+  // state برای دیالوگ قیمت
+  private val _priceUpdateTarget = MutableStateFlow<PriceUpdateTarget?>(null)
+  val priceUpdateTarget: StateFlow<PriceUpdateTarget?> = _priceUpdateTarget.asStateFlow()
+
+  fun openPriceUpdateDialog(target: PriceUpdateTarget) { _priceUpdateTarget.value = target }
+  fun closePriceUpdateDialog() { _priceUpdateTarget.value = null }
 }
 

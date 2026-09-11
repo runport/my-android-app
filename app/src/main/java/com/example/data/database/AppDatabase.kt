@@ -134,7 +134,7 @@ import kotlinx.coroutines.launch
     WaybillItemEntity::class,
     BaseCostConfigEntity::class,
   ],
-  version = 10,
+  version = 11,
   exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -832,6 +832,25 @@ abstract class AppDatabase : RoomDatabase() {
       }
     }
 
+    val MIGRATION_10_11 = object : Migration(10, 11) {
+      override fun migrate(db: SupportSQLiteDatabase) {
+        try {
+          db.execSQL("ALTER TABLE `fabric_rolls` ADD COLUMN `currentPricePerMeter` INTEGER NOT NULL DEFAULT 0")
+          db.execSQL("ALTER TABLE `fabric_rolls` ADD COLUMN `currentPricePerKg` INTEGER NOT NULL DEFAULT 0")
+          db.execSQL("ALTER TABLE `fabric_rolls` ADD COLUMN `lastPriceUpdateDate` TEXT NOT NULL DEFAULT ''")
+          db.execSQL("ALTER TABLE `fabric_rolls` ADD COLUMN `lastPriceUpdateTimestamp` INTEGER NOT NULL DEFAULT 0")
+        } catch (_: Exception) {}
+        try {
+          db.execSQL("ALTER TABLE `materials` ADD COLUMN `currentPriceKg` INTEGER NOT NULL DEFAULT 0")
+          db.execSQL("ALTER TABLE `materials` ADD COLUMN `priceUpdateNote` TEXT NOT NULL DEFAULT ''")
+        } catch (_: Exception) {}
+        // مقدار اولیه: قیمت روز = قیمت خرید
+        db.execSQL("UPDATE `fabric_rolls` SET `currentPricePerMeter` = `buyPricePerMeter` WHERE `currentPricePerMeter` = 0")
+        db.execSQL("UPDATE `fabric_rolls` SET `currentPricePerKg` = `buyPricePerKg` WHERE `currentPricePerKg` = 0")
+        db.execSQL("UPDATE `materials` SET `currentPriceKg` = `currentPrice` WHERE `currentPriceKg` = 0")
+      }
+    }
+
     fun getDatabase(
       context: Context,
       scope: CoroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
@@ -842,7 +861,7 @@ abstract class AppDatabase : RoomDatabase() {
           AppDatabase::class.java,
           "manufacturing_executive.db"
         )
-          .addMigrations(MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10)
+          .addMigrations(MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11)
           .addCallback(DatabaseCallback(scope))
           .build()
         INSTANCE = instance
