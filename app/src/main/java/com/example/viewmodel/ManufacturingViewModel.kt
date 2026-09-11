@@ -71,6 +71,7 @@ enum class MoreSubSection(val title: String) {
   PURCHASES("خرید و تدارکات"),
   LEDGER("دفتر کل و اسناد"),
   CUTTING("برش"),
+  READY_GOODS("کارهای آماده"),
   CUSTOMERS("مشتریان"),
   SUPPLIERS("تأمین‌کنندگان"),
   SETTINGS("تنظیمات استاندارد")

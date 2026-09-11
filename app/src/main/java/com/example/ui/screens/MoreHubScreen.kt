@@ -113,6 +113,7 @@ import com.example.ui.dialogs.SupplierRegistrationDialog
 import com.example.viewmodel.ManufacturingViewModel
 import com.example.viewmodel.MoreSubSection
 import com.example.viewmodel.QuickActionType
+import com.example.ui.screens.ReadyGoodsScreen
 
 @Composable
 fun MoreHubScreen(
@@ -793,12 +794,21 @@ fun MoreHubScreen(
             verticalAlignment = Alignment.CenterVertically
           ) {
             Text("لیست سفارشات مشتریان و رهگیری", style = MaterialTheme.typography.titleSmall, color = customColors.textPrimary, fontWeight = FontWeight.Bold)
-            Button(
-              onClick = { viewModel.openQuickAction(QuickActionType.SALE) },
-              colors = ButtonDefaults.buttonColors(containerColor = AccentBlue),
-              shape = RoundedCornerShape(8.dp)
-            ) {
-              Text("سفارش جدید", style = MaterialTheme.typography.labelSmall)
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+              Button(
+                onClick = { viewModel.openReserveOrderDialog() },
+                colors = ButtonDefaults.buttonColors(containerColor = AccentIndigo),
+                shape = RoundedCornerShape(8.dp)
+              ) {
+                Text("رزرو جدید", style = MaterialTheme.typography.labelSmall)
+              }
+              Button(
+                onClick = { viewModel.openQuickAction(QuickActionType.SALE) },
+                colors = ButtonDefaults.buttonColors(containerColor = AccentBlue),
+                shape = RoundedCornerShape(8.dp)
+              ) {
+                Text("فروش فوری", style = MaterialTheme.typography.labelSmall)
+              }
             }
           }
         }
@@ -833,6 +843,12 @@ fun MoreHubScreen(
         }
         items(productions) { prod ->
           ProductionBatchCard(prod = prod)
+        }
+      }
+
+      MoreSubSection.READY_GOODS -> {
+        item {
+          ReadyGoodsScreen(viewModel = viewModel)
         }
       }
 
