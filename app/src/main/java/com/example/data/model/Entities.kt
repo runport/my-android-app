@@ -90,6 +90,17 @@ data class CuttingEntity(
   val calculatedAverageMeters: Double get() = if (cutQuantity > 0 && metersUsed > 0.0) metersUsed / cutQuantity else (if (actualMetersPerItem > 0.0) actualMetersPerItem else 0.0)
   val unitCost: Long get() = if (cutQuantity > 0) totalCost / cutQuantity else 0L
   val unitSellingPrice: Long get() = if (cutQuantity > 0 && sellingPrice > 0L) sellingPrice / cutQuantity else (unitCost + if (cutQuantity > 0) targetProfit / cutQuantity else 0L)
+
+
+  companion object {
+    const val STATUS_CUT = "برش خورده"
+    const val STATUS_SEWING = "در حال دوخت"
+    const val STATUS_READY = "کار آماده"
+    const val STATUS_WAREHOUSE = "تحویل انبار"
+    const val STATUS_DELIVERED = "تحویل شده"
+    const val WORK_TYPE_STOCK = "تولید برای انبار"
+    const val WORK_TYPE_CUSTOMER = "سفارش مشتری"
+  }
 }
 
 /**

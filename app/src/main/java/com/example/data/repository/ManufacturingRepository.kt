@@ -3841,6 +3841,123 @@ class ManufacturingRepository(private val database: AppDatabase) {
       Pair(false, "خطا در پردازش فایل پشتیبان: ${e.localizedMessage}")
     }
   }
+
+  // ==========================================
+  // CUTTING PARTS WORKFLOW
+  // ==========================================
+
+  fun cuttingPartsByRoll(rollId: Long): Flow<List<CuttingEntity>> =
+    database.cuttingDao().getCuttingPartsByRoll(rollId)
+
+  fun cuttingPartsByStatus(status: String): Flow<List<CuttingEntity>> =
+    database.cuttingDao().getCuttingPartsByStatus(status)
+
+  fun activeCuttingParts(): Flow<List<CuttingEntity>> =
+    database.cuttingDao().getActiveParts()
+
+  suspend fun getNextPartNumber(rollId: Long): Int =
+    database.cuttingDao().getMaxPartNumber(rollId) + 1
+
+  suspend fun updateCuttingPartStatus(
+    partId: Long, newStatus: String, note: String = ""
+  ): Pair<Boolean, String> = database.withTransaction {
+    val part = database.cuttingDao().getCuttingById(partId)
+      ?: return@withTransaction Pair(false, "پارت با شناسه $partId یافت نشد")
+    if (part.status == newStatus) return@withTransaction Pair(true, "وضعیت تغییری نکرد")
+    val updatedNote = if (note.isNotBlank()) {
+      if (part.notes.isBlank()) note else "${part.notes} | $note"
+    } else part.notes
+    database.cuttingDao().updateCutting(part.copy(status = newStatus, notes = updatedNote))
+    if (newStatus == CuttingEntity.STATUS_READY && !part.isStockAdded) {
+      addPartToWarehouseInternal(part)
+    }
+    if (part.orderId != null && part.orderId > 0L) {
+      val newOrderStatus = when (newStatus) {
+        CuttingEntity.STATUS_SEWING -> SaleOrderStatus.IN_SEWING
+        CuttingEntity.STATUS_READY -> SaleOrderStatus.READY_FOR_SHIPPING
+        else -> null
+      }
+      if (newOrderStatus != null) {
+        try {
+          database.saleOrderDao().getOrderById(part.orderId)?.let { order ->
+            database.saleOrderDao().updateOrder(order.copy(deliveryStatus = newOrderStatus))
+            database.orderStatusHistoryDao().insertHistory(
+              OrderStatusHistoryEntity(
+                orderId = order.id, orderNumber = order.orderNumber,
+                oldStatus = order.deliveryStatus, newStatus = newOrderStatus,
+                date = PersianDateHelper.getCurrentPersianDate(),
+                time = PersianDateHelper.getCurrentTime(),
+                timestamp = System.currentTimeMillis(),
+                note = "به‌روزرسانی خودکار از پارت"
+              )
+            )
+          }
+        } catch (_: Exception) {}
+      }
+    }
+    Pair(true, "وضعیت پارت به «$newStatus» تغییر یافت")
+  }
+
+  private suspend fun addPartToWarehouseInternal(part: CuttingEntity) {
+    val prodCode = if (part.productCode.isNotBlank()) part.productCode else "PRD-${part.id}"
+    val prodName = if (part.productName.isNotBlank()) part.productName else part.partTitle
+    val count = part.cutQuantity
+    val unitCost = part.unitCost
+    val todayDate = PersianDateHelper.getTodayPersianDate()
+    val existing = database.inventoryDao().getByCode(prodCode)
+    if (existing != null) {
+      database.inventoryDao().updateItem(
+        existing.copy(
+          readyForShipment = existing.readyForShipment + count,
+          availableForSale = existing.availableForSale + count,
+          unitCostPrice = if (unitCost > 0L) unitCost else existing.unitCostPrice,
+          lastUpdated = todayDate
+        )
+      )
+    } else {
+      database.inventoryDao().insertItem(
+        InventoryEntity(
+          name = prodName, code = prodCode, category = "محصولات آماده",
+          readyForShipment = count, reservedQuantity = 0, availableForSale = count,
+          unitCostPrice = unitCost, unitSalePrice = part.unitSellingPrice,
+          unitWeightGrams = part.actualWeightKgPerItem * 1000.0,
+          totalWeightKg = part.weightKgUsed, unitType = "عدد", lastUpdated = todayDate
+        )
+      )
+    }
+    try {
+      database.inventoryLedgerDao().insert(
+        InventoryLedgerEntity(
+          timestamp = System.currentTimeMillis(), date = todayDate,
+          itemType = "FINISHED_GOOD", itemId = part.id,
+          itemCode = prodCode, itemName = prodName,
+          color = part.color, size = part.size,
+          transactionType = "CUTTING_PART_READY",
+          quantityChange = count.toDouble(),
+          balanceAfter = (existing?.readyForShipment ?: 0) + count.toDouble(),
+          unit = "عدد", unitPriceAtTime = unitCost,
+          relatedDocumentNumber = "PART-${part.id}",
+          notes = "کار آماده از پارت", operator = "مدیر کارگاه"
+        )
+      )
+    } catch (_: Exception) {}
+    database.cuttingDao().updateCutting(part.copy(isStockAdded = true))
+  }
+
+  suspend fun getBOMAsConsumableInputs(
+    productId: Long, quantity: Int
+  ): List<ProductionConsumableInputItem> {
+    val boms = database.productBOMDao().getBOMListForProduct(productId)
+    return boms.mapNotNull { bom ->
+      val m = database.materialDao().getById(bom.materialId) ?: return@mapNotNull null
+      ProductionConsumableInputItem(
+        accessoryCode = m.code, accessoryName = m.name,
+        quantityUsed = bom.standardQuantity * quantity,
+        unit = m.unit.ifBlank { bom.unit },
+        unitCostPrice = m.currentPrice
+      )
+    }
+  }
 }
 
 
