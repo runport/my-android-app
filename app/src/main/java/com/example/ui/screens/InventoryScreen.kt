@@ -386,6 +386,9 @@ fun InventoryScreen(
               },
               onHistory = {
                 viewModel.showRollHistory(roll)
+              },
+              onEdit = {
+                viewModel.startEditFabricRoll(roll)
               }
             )
           }
@@ -757,7 +760,8 @@ fun FabricInventoryCard(
 fun FabricRollInventoryCard(
   roll: FabricRollEntity,
   onConsume: () -> Unit,
-  onHistory: () -> Unit
+  onHistory: () -> Unit,
+  onEdit: () -> Unit = {}
 ) {
   val customColors = LocalCustomColors.current
   val remainingPercent = if (roll.initialMeters > 0) (roll.remainingMeters / roll.initialMeters).toFloat() else 0f
@@ -799,8 +803,13 @@ fun FabricRollInventoryCard(
           )
         }
 
-        IconButton(onClick = onHistory) {
-          Icon(Icons.Default.History, contentDescription = "سوابق مصرف", tint = AccentCyan)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+          IconButton(onClick = onEdit) {
+            Icon(Icons.Default.Edit, contentDescription = "ویرایش", tint = AccentIndigo)
+          }
+          IconButton(onClick = onHistory) {
+            Icon(Icons.Default.History, contentDescription = "سوابق مصرف", tint = AccentCyan)
+          }
         }
       }
 
