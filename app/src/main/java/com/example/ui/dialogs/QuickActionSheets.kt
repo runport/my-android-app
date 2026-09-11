@@ -214,6 +214,7 @@ fun QuickActionsModalBottomSheet(
         }
         QuickActionType.SALE -> {
           QuickSaleForm(
+            viewModel = viewModel,
             isPreOrder = false,
             onSubmit = { customer, phone, modelCode, modelName, qty, price, discount, paid, cost ->
               viewModel.submitSale(customer, phone, modelCode, modelName, qty, price, discount, paid, cost)
@@ -2101,11 +2102,16 @@ fun QuickSettingsForm(
  */
 @Composable
 fun QuickSaleForm(
+  viewModel: ManufacturingViewModel,
   isPreOrder: Boolean,
   onSubmit: (String, String, String, String, Int, Long, Long, Long, Long) -> Unit,
   onBack: () -> Unit
 ) {
   val customColors = LocalCustomColors.current
+  val customers by viewModel.customers.collectAsState()
+  val products by viewModel.products.collectAsState()
+  var showCustomerPicker by remember { mutableStateOf(false) }
+  var showProductPicker by remember { mutableStateOf(false) }
 
   var customerName by remember { mutableStateOf("بوتیک آریا (احمدی)") }
   var customerPhone by remember { mutableStateOf("09121234567") }
@@ -2154,12 +2160,50 @@ fun QuickSaleForm(
       }
     }
 
+    // Customer Picker
+    Button(
+      onClick = { showCustomerPicker = true },
+      modifier = Modifier.fillMaxWidth().height(44.dp),
+      shape = RoundedCornerShape(10.dp),
+      colors = ButtonDefaults.buttonColors(containerColor = com.example.ui.theme.AccentPurple.copy(alpha = 0.18f))
+    ) {
+      Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+        Icon(Icons.Default.PersonAdd, contentDescription = null, tint = com.example.ui.theme.AccentPurple, modifier = Modifier.size(18.dp))
+        Text(
+          text = if (customerName.isNotBlank())
+            "مشتری: $customerName - برای تغییر کلیک کنید"
+          else
+            "انتخاب مشتری از لیست یا ثبت مشتری جدید",
+          color = com.example.ui.theme.AccentPurple, fontSize = 12.sp, fontWeight = FontWeight.Bold
+        )
+      }
+    }
+
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
       Box(modifier = Modifier.weight(1.2f)) {
         ExecutiveTextField(label = "نام خریدار / فروشگاه", value = customerName, onValueChange = { customerName = it })
       }
       Box(modifier = Modifier.weight(0.8f)) {
         ExecutiveTextField(label = "تلفن", value = customerPhone, keyboardType = KeyboardType.Phone, onValueChange = { customerPhone = it })
+      }
+    }
+
+    // Product Picker for Sale
+    Button(
+      onClick = { showProductPicker = true },
+      modifier = Modifier.fillMaxWidth().height(44.dp),
+      shape = RoundedCornerShape(10.dp),
+      colors = ButtonDefaults.buttonColors(containerColor = AccentIndigo.copy(alpha = 0.18f))
+    ) {
+      Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+        Icon(Icons.Default.Search, contentDescription = null, tint = AccentIndigo, modifier = Modifier.size(18.dp))
+        Text(
+          text = if (modelName.isNotBlank())
+            "محصول: $modelName ($modelCode) - برای تغییر کلیک کنید"
+          else
+            "انتخاب محصول از لیست کالاها",
+          color = AccentIndigo, fontSize = 12.sp, fontWeight = FontWeight.Bold
+        )
       }
     }
 
@@ -2170,6 +2214,49 @@ fun QuickSaleForm(
       Box(modifier = Modifier.weight(0.6f)) {
         ExecutiveTextField(label = "کد", value = modelCode, onValueChange = { modelCode = it })
       }
+    }
+
+    // Customer Picker Dialog
+    if (showCustomerPicker) {
+      ItemSelectionPopupDialog(
+        title = "انتخاب مشتری از لیست",
+        items = customers,
+        onDismiss = { showCustomerPicker = false },
+        onAddNew = {
+          customerName = ""
+          customerPhone = ""
+          showCustomerPicker = false
+        },
+        onItemSelected = { cust ->
+          customerName = cust.name
+          customerPhone = cust.phone
+          showCustomerPicker = false
+        },
+        itemLabel = { it.name },
+        itemCode = { it.phone },
+        itemSecondary = { "شرکت: ${it.company} | بدهی: ${CurrencyHelper.formatToman(it.currentDebt)}" },
+        itemPrice = { it.totalPurchases }
+      )
+    }
+
+    // Product Picker Dialog
+    if (showProductPicker) {
+      ItemSelectionPopupDialog(
+        title = "انتخاب محصول برای فروش",
+        items = products,
+        onDismiss = { showProductPicker = false },
+        onAddNew = { showProductPicker = false },
+        onItemSelected = { p ->
+          modelName = p.name
+          modelCode = p.code
+          unitPriceText = p.effectiveSellingPrice.toString()
+          showProductPicker = false
+        },
+        itemLabel = { it.name },
+        itemCode = { it.code },
+        itemSecondary = { "دسته: ${it.categoryName} | قیمت فروش: ${CurrencyHelper.formatToman(it.effectiveSellingPrice)}" },
+        itemPrice = { it.effectiveSellingPrice }
+      )
     }
 
     // Pricing Mode Toggle (Requirement 12: قیمت بر اساس متر / عدد vs کیلوگرم)
@@ -3935,6 +4022,8 @@ fun QuickRollConsumeForm(
     availableRolls.firstOrNull { it.id == selectedRollId } ?: availableRolls.firstOrNull()
   }
 
+  val products by viewModel.products.collectAsState()
+  var showProductPicker by remember { mutableStateOf(false) }
   var modelName by remember { mutableStateOf("هودی بیسیک زمستانه") }
   var modelCode by remember { mutableStateOf("HD-204") }
   var consumptionUnit by remember { mutableStateOf(FabricConsumptionUnit.METERS) }
@@ -4154,6 +4243,25 @@ fun QuickRollConsumeForm(
       }
     }
 
+    // Product Picker
+    Button(
+      onClick = { showProductPicker = true },
+      modifier = Modifier.fillMaxWidth().height(44.dp),
+      shape = RoundedCornerShape(10.dp),
+      colors = ButtonDefaults.buttonColors(containerColor = AccentIndigo.copy(alpha = 0.18f))
+    ) {
+      Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+        Icon(Icons.Default.Search, contentDescription = null, tint = AccentIndigo, modifier = Modifier.size(18.dp))
+        Text(
+          text = if (modelName.isNotBlank() && modelCode.isNotBlank())
+            "مدل انتخابی: $modelName ($modelCode) - برای تغییر کلیک کنید"
+          else
+            "انتخاب مدل کار از لیست محصولات / ثبت مدل جدید",
+          color = AccentIndigo, fontSize = 12.sp, fontWeight = FontWeight.Bold
+        )
+      }
+    }
+
     // Model Inputs
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
       Box(modifier = Modifier.weight(1.4f)) {
@@ -4162,6 +4270,29 @@ fun QuickRollConsumeForm(
       Box(modifier = Modifier.weight(0.8f)) {
         ExecutiveTextField(label = "کد مدل", value = modelCode, onValueChange = { modelCode = it })
       }
+    }
+
+    // Product Selection Dialog
+    if (showProductPicker) {
+      ItemSelectionPopupDialog(
+        title = "انتخاب مدل از لیست محصولات",
+        items = products,
+        onDismiss = { showProductPicker = false },
+        onAddNew = {
+          modelName = ""
+          modelCode = ""
+          showProductPicker = false
+        },
+        onItemSelected = { p ->
+          modelName = p.name
+          modelCode = p.code
+          showProductPicker = false
+        },
+        itemLabel = { it.name },
+        itemCode = { it.code },
+        itemSecondary = { "دسته: ${it.categoryName} | قیمت فروش: ${CurrencyHelper.formatToman(it.effectiveSellingPrice)}" },
+        itemPrice = { it.currentCostPrice }
+      )
     }
 
     ExecutiveTextField(
