@@ -142,28 +142,30 @@ fun DashboardScreen(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
       ) {
-        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Column(
+          verticalArrangement = Arrangement.spacedBy(4.dp),
+          horizontalAlignment = Alignment.CenterHorizontally
+        ) {
           Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
           ) {
             Text(
-              text = factorySettings.companyName.ifEmpty { "مدیریت اجرایی کارخانه پوشاک" },
-              style = MaterialTheme.typography.labelSmall,
-              color = customColors.textMuted,
-              fontWeight = FontWeight.Medium,
-              letterSpacing = 0.5.sp
+              text = factorySettings.companyName.ifEmpty { "تولیدی برتر" },
+              style = MaterialTheme.typography.headlineSmall,
+              color = customColors.textPrimary,
+              fontWeight = FontWeight.ExtraBold,
+              letterSpacing = 0.3.sp
             )
-            // ✏️ Edit Header Settings
             SectionEditIcon(
               onClick = { viewModel.openSectionSettings(SectionSettingsTarget.HEADER) }
             )
           }
           Text(
-            text = "سلام، مدیر محترم",
-            style = MaterialTheme.typography.headlineSmall,
-            color = customColors.textPrimary,
-            fontWeight = FontWeight.Bold
+            text = "سیستم مدیریت اجرایی کارخانه پوشاک",
+            style = MaterialTheme.typography.bodySmall,
+            color = customColors.textMuted,
+            fontWeight = FontWeight.Medium
           )
         }
 
