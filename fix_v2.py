@@ -4,10 +4,10 @@ import re
 from pathlib import Path
 
 G, Y, R, B, RST = "\033[92m", "\033[93m", "\033[91m", "\033[94m", "\033[0m"
-def log(m): print(f"{G}✓{RST} {m}")
-def warn(m): print(f"{Y}⚠{RST} {m}")
-def err(m): print(f"{R}✗{RST} {m}")
-def info(m): print(f"{B}ℹ{RST} {m}")
+log  = lambda m: print(f"{G}✓{RST} {m}")
+warn = lambda m: print(f"{Y}⚠{RST} {m}")
+err  = lambda m: print(f"{R}✗{RST} {m}")
+info = lambda m: print(f"{B}ℹ{RST} {m}")
 
 BASE = Path("app/src/main/java/com/example")
 REPO = BASE / "data/repository/ManufacturingRepository.kt"
@@ -18,7 +18,7 @@ INV = BASE / "ui/screens/InventoryScreen.kt"
 def read(p): return p.read_text(encoding="utf-8") if p.exists() else ""
 def write(p, c): p.write_text(c, encoding="utf-8")
 
-# ۱. import در Repository
+# ۱. importهای Repository
 info("۱. importهای Repository")
 c = read(REPO)
 if "import com.example.data.model.ProductBOMEntity" not in c:
@@ -27,7 +27,7 @@ if "import com.example.data.model.ProductBOMEntity" not in c:
                       "import com.example.data.model.ProductBOMEntity\nimport com.example.data.model.ProductEntity", 1)
         log("ProductBOMEntity import اضافه شد")
     else:
-        warn("ProductEntity import نیست")
+        warn("ProductEntity import پیدا نشد")
 else:
     log("ProductBOMEntity از قبل هست")
 
@@ -37,7 +37,7 @@ if "import kotlinx.coroutines.flow.firstOrNull" not in c:
                       "import kotlinx.coroutines.flow.Flow\nimport kotlinx.coroutines.flow.firstOrNull", 1)
         log("firstOrNull import اضافه شد")
     else:
-        warn("Flow import نیست")
+        warn("Flow import پیدا نشد")
 else:
     log("firstOrNull از قبل هست")
 write(REPO, c)
@@ -66,7 +66,7 @@ else:
     else:
         err("ProductBOMDao interface پیدا نشد")
 
-# ۳. PriceUpdateDialog — رفع return
+# ۳. PriceUpdateDialog — رفع return در Composable
 info("۳. PriceUpdateDialog")
 c = read(QA)
 old = """  val customColors = LocalCustomColors.current
@@ -92,38 +92,25 @@ if old in c:
 elif new in c:
     log("از قبل اصلاح شده")
 else:
-    warn("الگو پیدا نشد")
+    warn("الگوی PriceUpdateDialog پیدا نشد")
+write(QA, c)
 
-# ۴. حذف تکرار MARKET_PRICE_UPDATE
-info("۴. تکرار MARKET_PRICE_UPDATE")
-block = """        QuickActionType.MARKET_PRICE_UPDATE -> {
-          QuickMarketPriceUpdateForm(
-            viewModel = viewModel,
-            onBack = { viewModel.openQuickAction(QuickActionType.WAREHOUSE_HUB) }
-          )
-        }"""
-cnt = c.count(block)
-if cnt > 1:
-    idx = c.rfind(block)
-    c = c[:idx] + c[idx+len(block):]
-    write(QA, c)
-    log(f"بلوک تکراری حذف شد ({cnt} → 1)")
-else:
-    log(f"تعداد: {cnt}")
-
-# ۵. import Refresh
-info("۵. import Refresh در InventoryScreen")
+# ۴. import Refresh
+info("۴. import Refresh در InventoryScreen")
 c = read(INV)
 if "import androidx.compose.material.icons.filled.Refresh" not in c:
-    c = c.replace("import androidx.compose.material.icons.filled.Inventory2",
-                  "import androidx.compose.material.icons.filled.Inventory2\nimport androidx.compose.material.icons.filled.Refresh", 1)
-    write(INV, c)
-    log("اضافه شد")
+    if "import androidx.compose.material.icons.filled.Inventory2" in c:
+        c = c.replace("import androidx.compose.material.icons.filled.Inventory2",
+                      "import androidx.compose.material.icons.filled.Inventory2\nimport androidx.compose.material.icons.filled.Refresh", 1)
+        write(INV, c)
+        log("اضافه شد")
+    else:
+        warn("Inventory2 import پیدا نشد")
 else:
     log("از قبل هست")
 
-# ۶. آکولاد نهایی
-info("۶. بررسی آکولادها")
+# ۵. بررسی نهایی
+info("۵. بررسی آکولادها")
 for path, label in [(REPO, "Repository"), (DAO_FILE, "AppDao"),
                     (QA, "QuickActionSheets"), (INV, "InventoryScreen")]:
     cc = read(path)
@@ -131,7 +118,10 @@ for path, label in [(REPO, "Repository"), (DAO_FILE, "AppDao"),
     if ob == cb:
         log(f"{label}: متوازن")
     else:
-        err(f"{label}: نامتوازن!")
+        err(f"{label}: {ob} vs {cb} نامتوازن!")
 
 print()
-log("تمام")
+log("تمام. حالا:")
+print("  git add .")
+print("  git commit -m 'fix: resolve phase 1 build errors'")
+print("  git push origin feature/cutting-parts-workflow")
