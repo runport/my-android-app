@@ -320,6 +320,18 @@ fun QuickActionsModalBottomSheet(
             onBack = { viewModel.openQuickAction(QuickActionType.WAREHOUSE_HUB) }
           )
         }
+        QuickActionType.SHIPPING_COMPANY_MANAGER -> {
+          ShippingCompanyManagerDialog(
+            viewModel = viewModel,
+            onDismiss = onDismiss
+          )
+        }
+        QuickActionType.CATEGORY_MANAGER -> {
+          CategoryManagerDialog(
+            viewModel = viewModel,
+            onDismiss = onDismiss
+          )
+        }
         QuickActionType.SHIPPING_MULTI -> {
           WaybillMultiItemForm(
             viewModel = viewModel,
@@ -581,6 +593,34 @@ fun QuickWarehouseHub(
       color = AccentIndigo,
       onClick = { onSelectAction(QuickActionType.MULTI_CUT) },
       tag = "action_multi_cut"
+    )
+
+    Spacer(modifier = Modifier.height(6.dp))
+
+    Text(
+      text = "مدیریت پایه (CRUD کامل)",
+      style = MaterialTheme.typography.labelMedium,
+      color = AccentIndigo,
+      fontWeight = FontWeight.Bold,
+      fontSize = 12.sp
+    )
+
+    QuickActionTile(
+      title = "مدیریت شرکت‌های باربری",
+      description = "افزودن، ویرایش و حذف شرکت‌های باربری و رانندگان",
+      icon = Icons.Default.LocalShipping,
+      color = AccentBlue,
+      onClick = { onSelectAction(QuickActionType.SHIPPING_COMPANY_MANAGER) },
+      tag = "action_company_manager"
+    )
+
+    QuickActionTile(
+      title = "مدیریت دسته‌بندی‌ها",
+      description = "دسته‌های پارچه، محصول و ملزومات - افزودن، ویرایش، حذف",
+      icon = Icons.Default.Category,
+      color = AccentIndigo,
+      onClick = { onSelectAction(QuickActionType.CATEGORY_MANAGER) },
+      tag = "action_category_manager"
     )
 
     QuickActionTile(

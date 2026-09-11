@@ -101,7 +101,9 @@ enum class QuickActionType {
   ROLL_IN,         // ثبت طاقه جدید پارچه با اطلاعات کامل و باربری
   ROLL_CONSUME,    // ثبت مصرف از طاقه برای خط تولید
   SHIPPING_IN,
-  SHIPPING_MULTI,     // ثبت رکورد مستقل هزینه باربری
+  SHIPPING_MULTI,
+  SHIPPING_COMPANY_MANAGER,
+  CATEGORY_MANAGER,     // ثبت رکورد مستقل هزینه باربری
   ROLL_HISTORY,    // سوابق مصرف‌های یک طاقه
   FIXED_COST_IN,   // ثبت هزینه ثابت با تعیین Scope
   CUSTOMER_PAYMENT,// دریافت وجه از مشتری
