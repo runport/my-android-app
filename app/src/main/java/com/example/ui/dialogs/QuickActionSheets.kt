@@ -320,6 +320,12 @@ fun QuickActionsModalBottomSheet(
             onBack = { viewModel.openQuickAction(QuickActionType.WAREHOUSE_HUB) }
           )
         }
+        QuickActionType.SHIPPING_MULTI -> {
+          WaybillMultiItemForm(
+            viewModel = viewModel,
+            onBack = { viewModel.openQuickAction(QuickActionType.WAREHOUSE_HUB) }
+          )
+        }
         QuickActionType.SHIPPING_IN -> {
           QuickShippingExpenseForm(
             viewModel = viewModel,

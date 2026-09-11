@@ -4145,6 +4145,100 @@ class ManufacturingRepository(private val database: AppDatabase) {
       }
     } catch (_: Exception) {}
   }
+
+  /**
+   * ثبت بارنامه چندقلمی با تخصیص صحیح کرایه (فاز ۲)
+   */
+  suspend fun submitMultiItemWaybill(
+    trackingNumber: String,
+    title: String,
+    carrierName: String,
+    deliveryDate: String,
+    totalAmount: Long,
+    items: List<com.example.ui.dialogs.WaybillItemDraft>,
+    allocations: List<Long>,
+    notes: String = ""
+  ): Pair<Boolean, String> = database.withTransaction {
+    if (items.isEmpty()) return@withTransaction Pair(false, "هیچ قلمی اضافه نشده")
+    if (totalAmount <= 0L) return@withTransaction Pair(false, "مبلغ کل باربری نامعتبر")
+
+    val todayDate = PersianDateHelper.getTodayPersianDate()
+    val now = System.currentTimeMillis()
+
+    // ۱. درج بارنامه اصلی
+    val primaryMethod = items.firstOrNull()?.allocationMethod?.name ?: "BY_WEIGHT"
+    val expense = ShippingExpenseEntity(
+      trackingNumber = trackingNumber,
+      title = title,
+      date = todayDate,
+      deliveryDate = deliveryDate,
+      timestamp = now,
+      totalAmount = totalAmount,
+      inboundType = "ترکیبی چندقلمی",
+      itemCount = items.size,
+      totalWeightKg = items.sumOf { it.weightKgText.toDoubleOrNull() ?: 0.0 },
+      totalQuantity = items.sumOf { it.quantityText.toDoubleOrNull() ?: 0.0 },
+      unit = "قلم",
+      allocationMethod = primaryMethod,
+      costPerUnit = totalAmount / items.size.coerceAtLeast(1),
+      carrierName = carrierName,
+      status = "ثبت شده",
+      notes = notes
+    )
+    val expenseId = database.shippingExpenseDao().insertExpense(expense)
+
+    // ۲. درج اقلام بارنامه + تخصیص به کالاها
+    items.forEachIndexed { idx, item ->
+      val alloc = allocations.getOrNull(idx) ?: 0L
+      val waybillItem = WaybillItemEntity(
+        waybillId = expenseId,
+        supplierId = item.supplierId,
+        supplierName = item.supplierName,
+        itemType = item.itemType,
+        itemId = item.itemId,
+        itemCode = item.itemCode,
+        itemName = item.itemName,
+        quantity = item.quantityText.toDoubleOrNull() ?: 0.0,
+        unit = item.unit,
+        purchaseValue = item.purchaseValueText.toLongOrNull() ?: 0L,
+        weightKg = item.weightKgText.toDoubleOrNull() ?: 0.0,
+        volumeM3 = 0.0,
+        shippingAllocation = alloc,
+        notes = ""
+      )
+      database.waybillItemDao().insert(waybillItem)
+
+      // تخصیص به طاقه در صورت وجود
+      if (item.itemType == "FABRIC_ROLL") {
+        val roll = database.fabricRollDao().getRollById(item.itemId)
+        if (roll != null) {
+          database.fabricRollDao().updateRoll(
+            roll.copy(
+              allocatedShippingCost = alloc,
+              shippingExpenseId = expenseId
+            )
+          )
+        }
+      }
+    }
+
+    // ۳. آدیت لاگ
+    try {
+      database.auditLogDao().insert(
+        AuditLogEntity(
+          timestamp = now, date = todayDate,
+          entityName = "Waybill", entityId = expenseId,
+          action = "CREATE_MULTI_ITEM_WAYBILL",
+          oldValue = "",
+          newValue = "بارنامه $trackingNumber با ${items.size} قلم و مبلغ ${totalAmount}",
+          reason = "ثبت بارنامه چندقلمی با تخصیص به هر قلم",
+          recordedBy = "مدیر کارگاه"
+        )
+      )
+    } catch (_: Exception) {}
+
+    Pair(true, "بارنامه $trackingNumber با ${items.size} قلم ثبت شد و کرایه بین اقلام تخصیص یافت")
+  }
 }
 
 

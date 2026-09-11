@@ -100,7 +100,8 @@ enum class QuickActionType {
   EDIT_SHIPPING_EXPENSE, // ویرایش بارنامه و هزینه باربری
   ROLL_IN,         // ثبت طاقه جدید پارچه با اطلاعات کامل و باربری
   ROLL_CONSUME,    // ثبت مصرف از طاقه برای خط تولید
-  SHIPPING_IN,     // ثبت رکورد مستقل هزینه باربری
+  SHIPPING_IN,
+  SHIPPING_MULTI,     // ثبت رکورد مستقل هزینه باربری
   ROLL_HISTORY,    // سوابق مصرف‌های یک طاقه
   FIXED_COST_IN,   // ثبت هزینه ثابت با تعیین Scope
   CUSTOMER_PAYMENT,// دریافت وجه از مشتری
@@ -2556,5 +2557,35 @@ class ManufacturingViewModel(
 
   fun openPriceUpdateDialog(target: PriceUpdateTarget) { _priceUpdateTarget.value = target }
   fun closePriceUpdateDialog() { _priceUpdateTarget.value = null }
+
+  /**
+   * ثبت بارنامه چندقلمی با تخصیص صحیح کرایه به هر قلم (فاز ۲)
+   */
+  fun submitMultiItemWaybill(
+    trackingNumber: String,
+    title: String,
+    carrierName: String,
+    deliveryDate: String,
+    totalAmount: Long,
+    items: List<com.example.ui.dialogs.WaybillItemDraft>,
+    allocations: List<Long>,
+    notes: String = ""
+  ) {
+    viewModelScope.launch {
+      try {
+        val (success, msg) = repository.submitMultiItemWaybill(
+          trackingNumber, title, carrierName, deliveryDate, totalAmount, items, allocations, notes
+        )
+        if (success) {
+          closeQuickAction()
+          _notification.value = UiNotification(msg)
+        } else {
+          _notification.value = UiNotification(msg, true)
+        }
+      } catch (e: Exception) {
+        _notification.value = UiNotification("خطا: ${e.localizedMessage}", true)
+      }
+    }
+  }
 }
 
