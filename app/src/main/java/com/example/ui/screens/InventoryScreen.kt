@@ -68,6 +68,7 @@ import com.example.ui.theme.StatusWarning
 import com.example.viewmodel.ManufacturingViewModel
 import com.example.viewmodel.QuickActionType
 import com.example.ui.dialogs.WaybillDetailsDialog
+import com.example.util.UnitFormatter
 
 enum class InventoryCategory(val title: String) {
   FINISHED_GOODS("محصولات آماده"),
@@ -543,7 +544,7 @@ fun InventoryProductCard(
             fontWeight = FontWeight.Bold
           )
           Text(
-            text = "کد: ${item.code} • وزن تک: ${item.unitWeightGrams.toInt()} گرم • کل: ${String.format("%.1f", totalWeightKg)} کیلو",
+            text = "کد: ${item.code} • وزن تک: ${item.unitWeightGrams.toInt()} گرم • کل: ${UnitFormatter.shortKg(totalWeightKg)} کیلو",
             style = MaterialTheme.typography.labelSmall,
             color = customColors.textMuted
           )
@@ -889,7 +890,7 @@ fun FabricRollInventoryCard(
         }
         Column {
           Text("وزن باقی‌مانده", style = MaterialTheme.typography.labelSmall, color = customColors.textMuted)
-          Text("${String.format("%.1f", remainingWeightKg)} کیلو", style = MaterialTheme.typography.bodySmall, color = customColors.textSecondary)
+          Text("${UnitFormatter.shortKg(remainingWeightKg)} کیلو", style = MaterialTheme.typography.bodySmall, color = customColors.textSecondary)
         }
         Column {
           Text("سهم باربری تخصیص یافته", style = MaterialTheme.typography.labelSmall, color = customColors.textMuted)

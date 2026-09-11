@@ -101,6 +101,7 @@ import com.example.data.service.FinancialCalculationService
 import com.example.ui.components.CurrencyHelper
 import com.example.ui.components.OldNewPriceIndicator
 import com.example.util.PersianDateHelper
+import com.example.util.UnitFormatter
 import com.example.ui.theme.AccentBlue
 import com.example.ui.theme.AccentCyan
 import com.example.ui.theme.AccentIndigo
@@ -3642,7 +3643,7 @@ fun MultiModelCuttingSheet(
         Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween) {
           Text("باقی‌مانده پارچه در طاقه:", style = MaterialTheme.typography.bodySmall, color = customColors.textMuted)
           Text(
-            text = if (isOverCapacity) "کسری متراژ: ${String.format(java.util.Locale.US, "%.1f", -remainingMeters)} متر!" else "${String.format(java.util.Locale.US, "%.1f", remainingMeters)} متر موجودی باقی‌مانده",
+            text = if (isOverCapacity) "کسری متراژ: ${String.format(java.util.Locale.US, "%.1f", -remainingMeters)} متر!" else "${UnitFormatter.shortMeters(remainingMeters)} متر موجودی باقی‌مانده",
             style = MaterialTheme.typography.bodySmall,
             color = if (isOverCapacity) StatusDanger else StatusSuccess,
             fontWeight = FontWeight.Bold
@@ -4159,7 +4160,7 @@ fun QuickRollConsumeForm(
           ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
               Text(roll.rollCode, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = if (isSel) AccentIndigo else customColors.textPrimary)
-              Text("${String.format(java.util.Locale.US, "%.1f", roll.remainingMeters)}متر", fontSize = 10.sp, color = customColors.textMuted)
+              Text("${UnitFormatter.shortMeters(roll.remainingMeters)}متر", fontSize = 10.sp, color = customColors.textMuted)
             }
           }
         }
@@ -4194,7 +4195,7 @@ fun QuickRollConsumeForm(
           }
           Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween) {
             Text("موجودی باقیمانده فعلی:", fontSize = 11.sp, color = customColors.textMuted)
-            Text("${String.format(java.util.Locale.US, "%.1f", roll.remainingMeters)} متر", fontSize = 11.sp, color = StatusSuccess, fontWeight = FontWeight.Bold)
+            Text("${UnitFormatter.shortMeters(roll.remainingMeters)} متر", fontSize = 11.sp, color = StatusSuccess, fontWeight = FontWeight.Bold)
           }
           Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween) {
             Text("قیمت هر متر / باربری تخصیص یافته:", fontSize = 11.sp, color = customColors.textMuted)
@@ -4274,16 +4275,16 @@ fun QuickRollConsumeForm(
         ) {
           Text(
             text = if (consumptionUnit == FabricConsumptionUnit.METERS)
-              "معادل وزنی: ${String.format(java.util.Locale.US, "%.2f", kgUsed)} کیلوگرم"
+              "معادل وزنی: ${UnitFormatter.shortKg(kgUsed)} کیلوگرم"
             else
-              "معادل متراژ: ${String.format(java.util.Locale.US, "%.2f", metersUsed)} متر پارچه",
+              "معادل متراژ: ${UnitFormatter.shortMeters(metersUsed)} متر پارچه",
             fontSize = 11.sp,
             color = AccentCyan,
             fontWeight = FontWeight.Bold
           )
           if (garmentCount > 0) {
             Text(
-              text = "مصرف سرانه هر عدد: ${String.format(java.util.Locale.US, "%.2f", metersPerGarment)} متر (${String.format(java.util.Locale.US, "%.0f", (kgUsed * 1000) / garmentCount)} گرم)",
+              text = "مصرف سرانه هر عدد: ${UnitFormatter.shortMeters(metersPerGarment)} متر (${String.format(java.util.Locale.US, "%.0f", (kgUsed * 1000) / garmentCount)} گرم)",
               fontSize = 11.sp,
               color = customColors.textSecondary
             )
@@ -4368,17 +4369,17 @@ fun QuickRollConsumeForm(
         )
         Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween) {
           Text("کل متراژ مصرف‌شده برای $garmentCount کار:", fontSize = 11.sp, color = customColors.textMuted)
-          Text("${String.format(java.util.Locale.US, "%.2f", metersUsed)} متر", fontSize = 11.sp, color = customColors.textPrimary, fontWeight = FontWeight.Bold)
+          Text("${UnitFormatter.shortMeters(metersUsed)} متر", fontSize = 11.sp, color = customColors.textPrimary, fontWeight = FontWeight.Bold)
         }
         Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween) {
           Text("کل وزن مصرف‌شده از طاقه:", fontSize = 11.sp, color = customColors.textMuted)
-          Text("${String.format(java.util.Locale.US, "%.2f", kgUsed)} کیلوگرم", fontSize = 11.sp, color = AccentBlue, fontWeight = FontWeight.Bold)
+          Text("${UnitFormatter.shortKg(kgUsed)} کیلوگرم", fontSize = 11.sp, color = AccentBlue, fontWeight = FontWeight.Bold)
         }
         HorizontalDivider(color = customColors.border)
         Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween) {
           Text("باقیمانده دست‌نخورده طاقه (متر و کیلو):", fontSize = 11.sp, color = customColors.textPrimary, fontWeight = FontWeight.Bold)
           Text(
-            "${String.format(java.util.Locale.US, "%.2f", newRemainingMeters)} متر (${String.format(java.util.Locale.US, "%.2f", newRemainingKg)} کیلو)",
+            "${UnitFormatter.shortMeters(newRemainingMeters)} متر (${UnitFormatter.shortKg(newRemainingKg)} کیلو)",
             fontSize = 11.sp,
             color = if (isOverCapacity) StatusDanger else StatusSuccess,
             fontWeight = FontWeight.Bold
@@ -4404,7 +4405,7 @@ fun QuickRollConsumeForm(
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
           Icon(Icons.Default.Close, contentDescription = null, tint = StatusDanger, modifier = Modifier.size(20.dp))
           Text(
-            text = "خطای کسری موجودی: متراژ مصرفی (${String.format(java.util.Locale.US, "%.1f", metersUsed)}متر) بیشتر از باقیمانده طاقه (${String.format(java.util.Locale.US, "%.1f", remainingMeters)}متر) است!",
+            text = "خطای کسری موجودی: متراژ مصرفی (${String.format(java.util.Locale.US, "%.1f", metersUsed)}متر) بیشتر از باقیمانده طاقه (${UnitFormatter.shortMeters(remainingMeters)}متر) است!",
             color = StatusDanger,
             fontSize = 11.sp,
             fontWeight = FontWeight.Bold

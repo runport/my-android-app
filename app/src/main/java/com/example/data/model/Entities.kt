@@ -554,7 +554,7 @@ data class FabricRollEntity(
   val effectiveCostPerMeter: Long get() = actualCostPerMeter
   val consumptionPercent: Int get() = if (initialMeters > 0.0) (((initialMeters - remainingMeters) / initialMeters) * 100).toInt().coerceIn(0, 100) else 0
   val isFinished: Boolean get() = remainingMeters <= 0.5
-  val dualStockDisplay: String get() = "${String.format(java.util.Locale.US, "%.2f", currentWeightKg)} KG / ${String.format(java.util.Locale.US, "%.2f", remainingMeters)} M"
+  val dualStockDisplay: String get() = "⚖️ ${String.format(java.util.Locale.US, "%.2f", currentWeightKg)} کیلو • 📏 ${String.format(java.util.Locale.US, "%.2f", remainingMeters)} متر"
 }
 
 /**
