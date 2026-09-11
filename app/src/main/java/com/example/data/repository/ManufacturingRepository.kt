@@ -4239,6 +4239,17 @@ class ManufacturingRepository(private val database: AppDatabase) {
 
     Pair(true, "بارنامه $trackingNumber با ${items.size} قلم ثبت شد و کرایه بین اقلام تخصیص یافت")
   }
+
+  /**
+   * دریافت همه ردیف‌های بارنامه مرتبط با یک قلم خاص (طاقه یا ملزومات)
+   */
+  suspend fun getAllWaybillItemsForItem(itemType: String, itemId: Long): List<WaybillItemEntity> {
+    return try {
+      database.waybillItemDao().getItemsForItem(itemType, itemId)
+    } catch (_: Exception) {
+      emptyList()
+    }
+  }
 }
 
 

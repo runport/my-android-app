@@ -2589,5 +2589,22 @@ class ManufacturingViewModel(
       }
     }
   }
+
+  // ==========================================
+  // WAYBILL DETAILS
+  // ==========================================
+
+  private val _waybillDetailsTarget = MutableStateFlow<com.example.data.model.FabricRollEntity?>(null)
+  val waybillDetailsTarget: StateFlow<com.example.data.model.FabricRollEntity?> = _waybillDetailsTarget.asStateFlow()
+
+  fun openWaybillDetails(roll: com.example.data.model.FabricRollEntity) {
+    _waybillDetailsTarget.value = roll
+  }
+
+  fun closeWaybillDetails() {
+    _waybillDetailsTarget.value = null
+  }
+
+  fun getRepository(): com.example.data.repository.ManufacturingRepository = repository
 }
 

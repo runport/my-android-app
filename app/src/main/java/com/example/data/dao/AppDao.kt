@@ -887,6 +887,9 @@ interface WaybillItemDao {
 
   @Query("DELETE FROM waybill_items WHERE waybillId = :waybillId")
   suspend fun deleteByWaybillId(waybillId: Long)
+
+  @Query("SELECT * FROM waybill_items WHERE itemType = :itemType AND itemId = :itemId")
+  suspend fun getItemsForItem(itemType: String, itemId: Long): List<WaybillItemEntity>
 }
 
 @Dao

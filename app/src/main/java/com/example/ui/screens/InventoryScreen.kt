@@ -403,6 +403,9 @@ fun InventoryScreen(
                     unit = "متر"
                   )
                 )
+              },
+              onViewWaybill = {
+                viewModel.openWaybillDetails(roll)
               }
             )
           }
@@ -493,6 +496,18 @@ fun InventoryScreen(
     item {
       Spacer(modifier = Modifier.height(80.dp))
     }
+  }
+
+  // دیالوگ جزئیات سهم کرایه طاقه
+  val waybillTarget by viewModel.waybillDetailsTarget.collectAsState()
+  waybillTarget?.let { roll ->
+    WaybillDetailsDialog(
+      repository = viewModel.getRepository(),
+      rollId = roll.id,
+      rollCode = roll.rollCode,
+      allocatedShipping = roll.allocatedShippingCost,
+      onDismiss = { viewModel.closeWaybillDetails() }
+    )
   }
 }
 
@@ -776,7 +791,8 @@ fun FabricRollInventoryCard(
   onConsume: () -> Unit,
   onHistory: () -> Unit,
   onEdit: () -> Unit = {},
-  onUpdatePrice: () -> Unit = {}
+  onUpdatePrice: () -> Unit = {},
+  onViewWaybill: () -> Unit = {}
 ) {
   val customColors = LocalCustomColors.current
   val remainingPercent = if (roll.initialMeters > 0) (roll.remainingMeters / roll.initialMeters).toFloat() else 0f
@@ -894,6 +910,16 @@ fun FabricRollInventoryCard(
           Spacer(Modifier.size(4.dp))
           Text("سوابق برش", style = MaterialTheme.typography.labelSmall)
         }
+
+OutlinedButton(
+  onClick = onViewWaybill,
+  modifier = Modifier.weight(1f),
+  shape = RoundedCornerShape(8.dp)
+) {
+  Icon(Icons.Default.LocalShipping, contentDescription = null, modifier = Modifier.size(14.dp))
+  Spacer(Modifier.size(4.dp))
+  Text("سهم کرایه", style = MaterialTheme.typography.labelSmall)
+}
 
         if (!isFinished) {
           Button(
