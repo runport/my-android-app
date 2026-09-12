@@ -2032,7 +2032,7 @@ fun OrderTimelineCard(
         }
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
           StatusChip(status = order.deliveryStatus)
-          ManagementEditButton(onClick = onEdit, modifier = Modifier.size(28.dp)) {)
+          ManagementEditButton(onClick = onEdit)
         }
       }
 
@@ -2383,7 +2383,7 @@ fun CustomerProfileCard(
         }
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
           StatusChip(status = customer.tier)
-          ManagementEditButton(onClick = onEdit, modifier = Modifier.size(28.dp)) {)
+          ManagementEditButton(onClick = onEdit)
         }
       }
 
