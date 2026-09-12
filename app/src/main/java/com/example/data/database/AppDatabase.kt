@@ -13,6 +13,7 @@ import com.example.data.dao.CustomerDao
 import com.example.data.dao.CuttingDao
 import com.example.data.dao.FabricDao
 import com.example.data.dao.FabricRollDao
+import com.example.data.dao.FabricPriceHistoryDao
 import com.example.data.dao.FactorySettingsDao
 import com.example.data.dao.FixedCostDao
 import com.example.data.dao.InventoryDao
@@ -49,6 +50,7 @@ import com.example.data.model.CustomerEntity
 import com.example.data.model.CuttingEntity
 import com.example.data.model.FabricEntity
 import com.example.data.model.FabricRollEntity
+import com.example.data.model.FabricPriceHistoryEntity
 import com.example.data.model.FactorySettingsEntity
 import com.example.data.model.FixedCostEntity
 import com.example.data.model.InventoryEntity
@@ -133,8 +135,9 @@ import kotlinx.coroutines.launch
     ShippingCompanyEntity::class,
     WaybillItemEntity::class,
     BaseCostConfigEntity::class,
+    FabricPriceHistoryEntity::class,
   ],
-  version = 12,
+  version = 13,
   exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -155,6 +158,7 @@ abstract class AppDatabase : RoomDatabase() {
   abstract fun fixedCostDao(): FixedCostDao
   abstract fun productionConsumableDao(): ProductionConsumableDao
 
+  abstract fun fabricPriceHistoryDao(): FabricPriceHistoryDao
   abstract fun categoryDao(): CategoryDao
   abstract fun productDao(): ProductDao
   abstract fun colorDao(): ColorDao
@@ -851,6 +855,33 @@ abstract class AppDatabase : RoomDatabase() {
       }
     }
 
+    val MIGRATION_12_13 = object : Migration(12, 13) {
+      override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+          "CREATE TABLE IF NOT EXISTS `fabric_price_history` (" +
+          "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+          "`fabricCategoryId` INTEGER, " +
+          "`fabricCategoryName` TEXT NOT NULL, " +
+          "`triggeringRollId` INTEGER NOT NULL, " +
+          "`triggeringRollCode` TEXT NOT NULL, " +
+          "`oldPricePerMeter` INTEGER NOT NULL, " +
+          "`newPricePerMeter` INTEGER NOT NULL, " +
+          "`oldPricePerKg` INTEGER NOT NULL, " +
+          "`newPricePerKg` INTEGER NOT NULL, " +
+          "`date` TEXT NOT NULL, " +
+          "`timestamp` INTEGER NOT NULL, " +
+          "`changeAmountPerMeter` INTEGER NOT NULL, " +
+          "`changePercentPerMeter` REAL NOT NULL, " +
+          "`affectedRollCount` INTEGER NOT NULL, " +
+          "`reason` TEXT NOT NULL, " +
+          "`source` TEXT NOT NULL, " +
+          "`supplierName` TEXT NOT NULL, " +
+          "`notes` TEXT NOT NULL, " +
+          "`recordedBy` TEXT NOT NULL)"
+        )
+      }
+    }
+
     val MIGRATION_11_12 = object : Migration(11, 12) {
       override fun migrate(db: SupportSQLiteDatabase) {
         try {
@@ -869,7 +900,7 @@ abstract class AppDatabase : RoomDatabase() {
           AppDatabase::class.java,
           "manufacturing_executive.db"
         )
-          .addMigrations(MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12)
+          .addMigrations(MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13)
           .addCallback(DatabaseCallback(scope))
           .build()
         INSTANCE = instance

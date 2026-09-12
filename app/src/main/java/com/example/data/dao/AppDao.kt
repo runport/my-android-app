@@ -26,6 +26,7 @@ import com.example.data.model.PriceChangeReasonEntity
 import com.example.data.model.ProductBOMEntity
 import com.example.data.model.ProductEntity
 import com.example.data.model.ProductPriceHistoryEntity
+import com.example.data.model.FabricPriceHistoryEntity
 import com.example.data.model.ProductVariantEntity
 import com.example.data.model.ProductionConsumableEntity
 import com.example.data.model.ProductionEntity
@@ -653,6 +654,27 @@ interface MaterialPriceHistoryDao {
 
   @Insert(onConflict = OnConflictStrategy.REPLACE)
   suspend fun insertAll(items: List<MaterialPriceHistoryEntity>)
+}
+
+@Dao
+interface FabricPriceHistoryDao {
+  @Query("SELECT * FROM fabric_price_history ORDER BY id DESC")
+  fun getAllHistory(): Flow<List<FabricPriceHistoryEntity>>
+
+  @Query("SELECT * FROM fabric_price_history WHERE fabricCategoryId = :categoryId ORDER BY id DESC")
+  fun getHistoryForCategory(categoryId: Long): Flow<List<FabricPriceHistoryEntity>>
+
+  @Query("SELECT * FROM fabric_price_history WHERE triggeringRollId = :rollId ORDER BY id DESC")
+  fun getHistoryForRoll(rollId: Long): Flow<List<FabricPriceHistoryEntity>>
+
+  @Query("SELECT * FROM fabric_price_history ORDER BY id DESC LIMIT :limit")
+  fun getRecentHistory(limit: Int): Flow<List<FabricPriceHistoryEntity>>
+
+  @Insert(onConflict = OnConflictStrategy.REPLACE)
+  suspend fun insert(history: FabricPriceHistoryEntity): Long
+
+  @Insert(onConflict = OnConflictStrategy.REPLACE)
+  suspend fun insertAll(items: List<FabricPriceHistoryEntity>)
 }
 
 @Dao

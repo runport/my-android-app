@@ -929,6 +929,32 @@ data class MaterialPriceHistoryEntity(
 )
 
 /**
+ * 26. Fabric Price History
+ */
+@Entity(tableName = "fabric_price_history")
+data class FabricPriceHistoryEntity(
+  @PrimaryKey(autoGenerate = true) val id: Long = 0,
+  val fabricCategoryId: Long? = null,
+  val fabricCategoryName: String = "",
+  val triggeringRollId: Long = 0L,
+  val triggeringRollCode: String = "",
+  val oldPricePerMeter: Long = 0L,
+  val newPricePerMeter: Long = 0L,
+  val oldPricePerKg: Long = 0L,
+  val newPricePerKg: Long = 0L,
+  val date: String = "",
+  val timestamp: Long = 0L,
+  val changeAmountPerMeter: Long = 0L,
+  val changePercentPerMeter: Double = 0.0,
+  val affectedRollCount: Int = 0,
+  val reason: String = "",
+  val source: String = "PURCHASE",
+  val supplierName: String = "",
+  val notes: String = "",
+  val recordedBy: String = "",
+)
+
+/**
  * 17. Product Price & Cost History (تاریخچه بهای تمام‌شده و قیمت فروش محصول)
  */
 @Entity(tableName = "product_price_history")
