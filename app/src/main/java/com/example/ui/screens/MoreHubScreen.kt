@@ -763,21 +763,21 @@ fun MoreHubScreen(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
           ) {
-            Text("لیست سفارشات مشتریان و رهگیری", style = MaterialTheme.typography.titleSmall, color = customColors.textPrimary, fontWeight = FontWeight.Bold)
+            Text("لیست سفارشات مشتریان و رهگیری", modifier = Modifier.weight(1f, fill = false), style = MaterialTheme.typography.titleSmall, color = customColors.textPrimary, fontWeight = FontWeight.Bold)
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
               Button(
                 onClick = { viewModel.openReserveOrderDialog() },
                 colors = ButtonDefaults.buttonColors(containerColor = AccentIndigo),
                 shape = RoundedCornerShape(8.dp)
               ) {
-                Text("رزرو جدید", style = MaterialTheme.typography.labelSmall)
+                Text("رزرو جدید", style = MaterialTheme.typography.labelSmall, maxLines = 1, softWrap = false)
               }
               Button(
                 onClick = { viewModel.openQuickAction(QuickActionType.SALE) },
                 colors = ButtonDefaults.buttonColors(containerColor = AccentBlue),
                 shape = RoundedCornerShape(8.dp)
               ) {
-                Text("فروش فوری", style = MaterialTheme.typography.labelSmall)
+                Text("فروش فوری", style = MaterialTheme.typography.labelSmall, maxLines = 1, softWrap = false)
               }
             }
           }
@@ -801,13 +801,13 @@ fun MoreHubScreen(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
           ) {
-            Text("بچ‌های فعال تولید در کارگاه", style = MaterialTheme.typography.titleSmall, color = customColors.textPrimary, fontWeight = FontWeight.Bold)
+            Text("بچ‌های فعال تولید در کارگاه", modifier = Modifier.weight(1f, fill = false), style = MaterialTheme.typography.titleSmall, color = customColors.textPrimary, fontWeight = FontWeight.Bold)
             Button(
               onClick = { viewModel.openQuickAction(QuickActionType.PRODUCTION) },
               colors = ButtonDefaults.buttonColors(containerColor = StatusSuccess),
               shape = RoundedCornerShape(8.dp)
             ) {
-              Text("ثبت تولید", style = MaterialTheme.typography.labelSmall)
+              Text("ثبت تولید", style = MaterialTheme.typography.labelSmall, maxLines = 1, softWrap = false)
             }
           }
         }
@@ -825,7 +825,7 @@ fun MoreHubScreen(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
           ) {
-            Text("میز برش و پایش مصرف پارچه", style = MaterialTheme.typography.titleSmall, color = customColors.textPrimary, fontWeight = FontWeight.Bold)
+            Text("میز برش و پایش مصرف پارچه", modifier = Modifier.weight(1f, fill = false), style = MaterialTheme.typography.titleSmall, color = customColors.textPrimary, fontWeight = FontWeight.Bold)
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
               Button(
                 onClick = { viewModel.openQuickAction(QuickActionType.MULTI_CUT) },
@@ -834,14 +834,14 @@ fun MoreHubScreen(
               ) {
                 Icon(Icons.Default.ContentCut, contentDescription = null, modifier = Modifier.size(14.dp))
                 Spacer(modifier = Modifier.width(4.dp))
-                Text("برش چند مدلی", style = MaterialTheme.typography.labelSmall)
+                Text("برش چند مدلی", style = MaterialTheme.typography.labelSmall, maxLines = 1, softWrap = false)
               }
               Button(
                 onClick = { viewModel.openQuickAction(QuickActionType.CUTTING) },
                 colors = ButtonDefaults.buttonColors(containerColor = StatusWarning),
                 shape = RoundedCornerShape(8.dp)
               ) {
-                Text("برش ساده", style = MaterialTheme.typography.labelSmall)
+                Text("برش ساده", style = MaterialTheme.typography.labelSmall, maxLines = 1, softWrap = false)
               }
             }
           }
