@@ -69,6 +69,7 @@ import com.example.viewmodel.ManufacturingViewModel
 import com.example.viewmodel.QuickActionType
 import com.example.ui.dialogs.WaybillDetailsDialog
 import com.example.util.UnitFormatter
+import com.example.ui.dialogs.CategoryManagerDialog
 
 enum class InventoryCategory(val title: String) {
   FINISHED_GOODS("محصولات آماده"),
@@ -85,6 +86,7 @@ fun InventoryScreen(
 ) {
   val customColors = LocalCustomColors.current
   var selectedCategory by remember { mutableStateOf(InventoryCategory.FINISHED_GOODS) }
+  var showCategoryManager by remember { mutableStateOf(false) }
   val inventoryItems by viewModel.inventory.collectAsState()
   val fabrics by viewModel.fabrics.collectAsState()
   val fabricRolls by viewModel.fabricRolls.collectAsState()
@@ -414,6 +416,18 @@ fun InventoryScreen(
         }
       }
       InventoryCategory.RAW_FABRICS -> {
+        item {
+          Button(
+            onClick = { showCategoryManager = true },
+            modifier = Modifier.fillMaxWidth().height(44.dp),
+            shape = RoundedCornerShape(8.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = AccentIndigo)
+          ) {
+            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+            Spacer(Modifier.size(6.dp))
+            Text("مدیریت دسته‌بندی پارچه (افزودن / ویرایش / حذف)", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+          }
+        }
         items(fabrics) { fabric ->
           FabricInventoryCard(
             fabric = fabric,
@@ -423,6 +437,18 @@ fun InventoryScreen(
       }
       InventoryCategory.ACCESSORIES -> {
         val accessories = inventoryItems.filter { it.category == "ملزومات" }
+        item {
+          Button(
+            onClick = { showCategoryManager = true },
+            modifier = Modifier.fillMaxWidth().height(44.dp),
+            shape = RoundedCornerShape(8.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = com.example.ui.theme.AccentAmber)
+          ) {
+            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp), tint = Color.Black)
+            Spacer(Modifier.size(6.dp))
+            Text("مدیریت دسته‌بندی ملزومات (افزودن / ویرایش / حذف)", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+          }
+        }
         items(accessories) { item ->
           InventoryProductCard(
             item = item,
@@ -499,6 +525,16 @@ fun InventoryScreen(
       Spacer(modifier = Modifier.height(80.dp))
     }
   }
+
+
+  // دیالوگ مدیریت دسته‌بندی‌ها
+  if (showCategoryManager) {
+    CategoryManagerDialog(
+      viewModel = viewModel,
+      onDismiss = { showCategoryManager = false }
+    )
+  }
+
 
   // دیالوگ جزئیات سهم کرایه طاقه
   val waybillTarget by viewModel.waybillDetailsTarget.collectAsState()
