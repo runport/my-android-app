@@ -303,7 +303,7 @@ fun MoreHubScreen(
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
           Text("انتخاب کالا:", style = MaterialTheme.typography.labelSmall)
           LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            items(products) { p ->
+            items(products, key = { it.id }) { p ->
               FilterChip(
                 selected = p.id == selectedProdId,
                 onClick = { selectedProdId = p.id },
@@ -314,7 +314,7 @@ fun MoreHubScreen(
 
           Text("انتخاب ماده اولیه یا خرج‌کار:", style = MaterialTheme.typography.labelSmall)
           LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            items(materials) { m ->
+            items(materials, key = { it.id }) { m ->
               FilterChip(
                 selected = m.id == selectedMatId,
                 onClick = { selectedMatId = m.id },
@@ -782,7 +782,7 @@ fun MoreHubScreen(
             }
           }
         }
-        items(orders) { order ->
+        items(orders, key = { it.id }) { order ->
           OrderTimelineCard(
             order = order,
             history = statusHistory.filter { it.orderId == order.id },
@@ -811,7 +811,7 @@ fun MoreHubScreen(
             }
           }
         }
-        items(productions) { prod ->
+        items(productions, key = { it.id }) { prod ->
           ProductionBatchCard(prod = prod)
         }
       }
@@ -846,7 +846,7 @@ fun MoreHubScreen(
             }
           }
         }
-        items(cuttings) { cut ->
+        items(cuttings, key = { it.id }) { cut ->
           CuttingCard(cut = cut)
         }
       }
@@ -868,7 +868,7 @@ fun MoreHubScreen(
             }
           }
         }
-        items(customers) { cust ->
+        items(customers, key = { it.id }) { cust ->
           CustomerProfileCard(
             customer = cust,
             onEdit = { viewModel.startEditCustomer(cust) }
@@ -910,7 +910,7 @@ fun MoreHubScreen(
             }
           }
         }
-        items(suppliers) { sup ->
+        items(suppliers, key = { it.id }) { sup ->
           SupplierCard(
             sup = sup,
             onDelete = { supplierToDelete = sup }
@@ -1474,7 +1474,7 @@ fun MoreHubScreen(
           }
         }
 
-        items(standards) { standard ->
+        items(standards, key = { it.id }) { standard ->
           ModelStandardCard(standard = standard)
         }
       }
@@ -1530,7 +1530,7 @@ fun MoreHubScreen(
               }
             }
 
-            items(products) { prod ->
+            items(products, key = { it.id }) { prod ->
               Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
@@ -1634,7 +1634,7 @@ fun MoreHubScreen(
               }
             }
 
-            items(materials) { mat ->
+            items(materials, key = { it.id }) { mat ->
               Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
@@ -1706,7 +1706,7 @@ fun MoreHubScreen(
               }
             }
 
-            items(boms) { bom ->
+            items(boms, key = { it.id }) { bom ->
               Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(10.dp),
@@ -1747,7 +1747,7 @@ fun MoreHubScreen(
               }
             }
 
-            items(categories) { cat ->
+            items(categories, key = { it.id }) { cat ->
               Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(10.dp),
@@ -1779,7 +1779,7 @@ fun MoreHubScreen(
                   }
                 }
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                  items(colors) { c ->
+                  items(colors, key = { it.id }) { c ->
                     Card(
                       shape = RoundedCornerShape(8.dp),
                       colors = CardDefaults.cardColors(containerColor = customColors.card),
@@ -1802,7 +1802,7 @@ fun MoreHubScreen(
                   }
                 }
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                  items(sizes) { s ->
+                  items(sizes, key = { it.id }) { s ->
                     Card(
                       shape = RoundedCornerShape(8.dp),
                       colors = CardDefaults.cardColors(containerColor = customColors.card),
@@ -1849,7 +1849,7 @@ fun MoreHubScreen(
           }
         }
 
-        items(purchaseOrders) { po ->
+        items(purchaseOrders, key = { it.id }) { po ->
           Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
@@ -1918,7 +1918,7 @@ fun MoreHubScreen(
           }
         }
 
-        items(inventoryLedger) { entry ->
+        items(inventoryLedger, key = { it.id }) { entry ->
           Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(10.dp),
