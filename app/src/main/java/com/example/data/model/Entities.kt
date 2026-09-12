@@ -871,7 +871,9 @@ data class MaterialEntity(
   val isActive: Boolean = true,
 
   val currentPriceKg: Long = 0L,
-  val priceUpdateNote: String = "", {
+  val priceUpdateNote: String = "",
+  val allocatedShippingCost: Long = 0L
+) {
   val isLowStock: Boolean get() = stockQuantity <= minStockThreshold
 }
 
