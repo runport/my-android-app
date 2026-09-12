@@ -4076,8 +4076,21 @@ fun QuickRollConsumeForm(
   var baseMaterialsText by remember { mutableStateOf("15000") }
   var otherDirectCostText by remember { mutableStateOf("0") }
   var selectedStatus by remember { mutableStateOf("برش خورده") }
+  var profitAmountText by remember { mutableStateOf("") }
+  var settingsApplied by remember { mutableStateOf(false) }
 
   val productions by viewModel.productions.collectAsStateWithLifecycle()
+  val factorySettings by viewModel.factorySettings.collectAsStateWithLifecycle()
+  LaunchedEffect(factorySettings) {
+    if (!settingsApplied) {
+      factorySettings?.let { fs ->
+        baseMaterialsText = fs.defaultAccessoriesCost.toString()
+        profitPercentText = fs.targetProfitMarginPercent.toInt().toString()
+        settingsApplied = true
+      }
+    }
+  }
+
   val relatedProductions = remember(productions, selectedRoll) {
     if (selectedRoll == null) emptyList()
     else productions.filter { it.rollId == selectedRoll.id && it.status != "تکمیل شده" && it.status != "آماده ارسال / تکمیل موجودی" }
@@ -4101,6 +4114,10 @@ fun QuickRollConsumeForm(
   val untouchedPercent = if (rollInitialMeters > 0.0) ((newRemainingMeters / rollInitialMeters) * 100.0).coerceIn(0.0, 100.0) else 0.0
 
   val buyPriceMeter = selectedRoll?.buyPricePerMeter ?: 0L
+  val liveSubtotal = (if (garmentCount > 0) ((metersUsed * buyPriceMeter) / garmentCount).toLong() else 0L) +
+    (tailorCostText.toLongOrNull() ?: 0L) +
+    (baseMaterialsText.toLongOrNull() ?: 0L) +
+    ((otherDirectCostText.toLongOrNull() ?: 0L) / garmentCount.coerceAtLeast(1))
   val allocatedFabricCost = (metersUsed * buyPriceMeter).toLong()
   val allocatedShipping = selectedRoll?.allocatedShippingCost ?: 0L
   val allocatedShippingCost = if (rollInitialMeters > 0.0) ((metersUsed / rollInitialMeters) * allocatedShipping).toLong() else 0L
@@ -4380,9 +4397,31 @@ fun QuickRollConsumeForm(
               label = "سود ثابت هدف (٪)",
               value = profitPercentText,
               keyboardType = KeyboardType.Decimal,
-              onValueChange = { profitPercentText = it }
+              onValueChange = { newVal ->
+                profitPercentText = newVal
+                val pct = newVal.toDoubleOrNull() ?: 0.0
+                val amt = (liveSubtotal * pct / 100.0).toLong()
+                profitAmountText = amt.toString()
+              }
             )
           }
+        }
+
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+          Box(modifier = Modifier.weight(1f)) {
+            ExecutiveTextField(
+              label = "یا سود ثابت (مبلغ)",
+              value = profitAmountText,
+              keyboardType = KeyboardType.Number,
+              onValueChange = { newVal ->
+                profitAmountText = newVal
+                val amt = newVal.toLongOrNull() ?: 0L
+                val pct = if (liveSubtotal > 0) (amt.toDouble() / liveSubtotal) * 100.0 else 0.0
+                profitPercentText = String.format(java.util.Locale.US, "%.1f", pct)
+              }
+            )
+          }
+          Box(modifier = Modifier.weight(1f)) { }
         }
 
         ExecutiveTextField(
