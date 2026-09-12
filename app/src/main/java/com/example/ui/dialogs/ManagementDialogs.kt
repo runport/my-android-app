@@ -190,18 +190,8 @@ fun ShippingCompanyManagerDialog(
                                         }
                                     }
                                     Row {
-                                        IconButton(
-                                            onClick = { editingCompany = company; showEditor = true },
-                                            modifier = Modifier.size(28.dp)
-                                        ) {
-                                            Icon(Icons.Default.Edit, contentDescription = null, tint = AccentCyan, modifier = Modifier.size(16.dp))
-                                        }
-                                        IconButton(
-                                            onClick = { deleteTarget = company },
-                                            modifier = Modifier.size(28.dp)
-                                        ) {
-                                            Icon(Icons.Default.Delete, contentDescription = null, tint = StatusDanger, modifier = Modifier.size(16.dp))
-                                        }
+                                        ManagementEditButton(onClick = { editingCompany = company; showEditor = true })
+                                        ManagementDeleteButton(onClick = { deleteTarget = company })
                                     }
                                 }
                             }
