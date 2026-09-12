@@ -52,6 +52,8 @@ import com.example.ui.theme.StatusWarning
 import com.example.util.UnitFormatter
 import com.example.viewmodel.ManufacturingViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.viewmodel.MoreSubSection
+import com.example.ui.theme.AccentBlue
 
 enum class ReadyGoodsTab(val title: String) {
     CUT("برش خورده"),
@@ -83,6 +85,36 @@ fun ReadyGoodsScreen(
             .padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
+        // MoreSubSection switcher (top navigation between modules)
+        item {
+          Row(
+            modifier = Modifier
+              .fillMaxWidth()
+              .horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+          ) {
+            MoreSubSection.values().forEach { sub ->
+              val isSelected = sub == MoreSubSection.READY_GOODS
+              Box(
+                modifier = Modifier
+                  .clip(RoundedCornerShape(20.dp))
+                  .background(if (isSelected) customColors.cardElevated else customColors.secondaryBg)
+                  .border(1.dp, if (isSelected) AccentBlue else customColors.border, RoundedCornerShape(20.dp))
+                  .clickable { viewModel.setSubSection(sub) }
+                  .padding(horizontal = 16.dp, vertical = 8.dp),
+                contentAlignment = Alignment.Center
+              ) {
+                Text(
+                  text = sub.title,
+                  style = MaterialTheme.typography.labelSmall,
+                  color = if (isSelected) customColors.textPrimary else customColors.textMuted,
+                  fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                )
+              }
+            }
+          }
+        }
+
         // Header
         item {
             Spacer(Modifier.height(8.dp))
