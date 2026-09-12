@@ -731,7 +731,8 @@ fun MoreHubScreen(
           .horizontalScroll(rememberScrollState()),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
       ) {
-        MoreSubSection.values().forEach { sub ->
+        val subs = remember { MoreSubSection.values().toList() }
+        subs.forEach { sub ->
           val isSelected = sub == selectedSubSection
           Box(
             modifier = Modifier

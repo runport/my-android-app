@@ -93,7 +93,8 @@ fun ReadyGoodsScreen(
               .horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
           ) {
-            MoreSubSection.values().forEach { sub ->
+            val subs = remember { MoreSubSection.values().toList() }
+    subs.forEach { sub ->
               val isSelected = sub == MoreSubSection.READY_GOODS
               Box(
                 modifier = Modifier
@@ -145,7 +146,8 @@ fun ReadyGoodsScreen(
                     .horizontalScroll(rememberScrollState()),
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                ReadyGoodsTab.values().forEach { tab ->
+                val tabs = remember { ReadyGoodsTab.values().toList() }
+        tabs.forEach { tab ->
                     val isSelected = tab == selectedTab
                     val count = when (tab) {
                         ReadyGoodsTab.CUT -> cutParts.size
