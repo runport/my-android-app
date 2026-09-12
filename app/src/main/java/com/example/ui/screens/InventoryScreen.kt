@@ -72,6 +72,9 @@ import com.example.util.UnitFormatter
 import com.example.ui.dialogs.CategoryManagerDialog
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.material.icons.filled.Build
+import com.example.ui.components.ManagementAddButton
+import com.example.ui.components.ManagementEditButton
+import com.example.ui.components.ManagementDeleteButton
 
 enum class InventoryCategory(val title: String) {
   FINISHED_GOODS("محصولات آماده"),
@@ -468,16 +471,10 @@ fun InventoryScreen(
       }
       InventoryCategory.RAW_FABRICS -> {
         item {
-          Button(
-            onClick = { showCategoryManager = true },
-            modifier = Modifier.fillMaxWidth().height(44.dp),
-            shape = RoundedCornerShape(8.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = AccentIndigo)
-          ) {
-            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
-            Spacer(Modifier.size(6.dp))
-            Text("مدیریت دسته‌بندی پارچه (افزودن / ویرایش / حذف)", fontSize = 12.sp, fontWeight = FontWeight.Bold)
-          }
+          ManagementAddButton(
+            text = "مدیریت دسته‌بندی پارچه",
+            onClick = { showCategoryManager = true }
+          )
         }
         items(fabrics) { fabric ->
           FabricInventoryCard(
@@ -489,16 +486,12 @@ fun InventoryScreen(
       InventoryCategory.ACCESSORIES -> {
         val accessories = inventoryItems.filter { it.category == "ملزومات" }
         item {
-          Button(
+          ManagementAddButton(
+            text = "مدیریت دسته‌بندی ملزومات",
             onClick = { showCategoryManager = true },
-            modifier = Modifier.fillMaxWidth().height(44.dp),
-            shape = RoundedCornerShape(8.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = com.example.ui.theme.AccentAmber)
-          ) {
-            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp), tint = Color.Black)
-            Spacer(Modifier.size(6.dp))
-            Text("مدیریت دسته‌بندی ملزومات (افزودن / ویرایش / حذف)", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.Black)
-          }
+            containerColor = com.example.ui.theme.AccentAmber,
+            contentColor = Color.Black
+          )
         }
         items(accessories) { item ->
           InventoryProductCard(
@@ -642,12 +635,7 @@ fun InventoryProductCard(
           horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
           StatusChip(status = if (item.availableForSale > 50) "موجودی مطلوب" else "موجودی محدود")
-          IconButton(
-            onClick = onEdit,
-            modifier = Modifier.size(28.dp)
-          ) {
-            Icon(Icons.Default.Edit, contentDescription = "ویرایش", tint = customColors.textMuted, modifier = Modifier.size(16.dp))
-          }
+          ManagementEditButton(onClick = onEdit)
         }
       }
 
@@ -782,12 +770,7 @@ fun FabricInventoryCard(
             StatusChip(status = "موجودی کافی")
           }
 
-          IconButton(
-            onClick = onEdit,
-            modifier = Modifier.size(28.dp)
-          ) {
-            Icon(Icons.Default.Edit, contentDescription = "ویرایش", tint = customColors.textMuted, modifier = Modifier.size(16.dp))
-          }
+          ManagementEditButton(onClick = onEdit)
         }
       }
 
@@ -927,9 +910,7 @@ fun FabricRollInventoryCard(
           IconButton(onClick = onUpdatePrice) {
             Icon(Icons.Default.Refresh, contentDescription = "به‌روزرسانی قیمت روز", tint = StatusSuccess)
           }
-          IconButton(onClick = onEdit) {
-            Icon(Icons.Default.Edit, contentDescription = "ویرایش", tint = AccentIndigo)
-          }
+          ManagementEditButton(onClick = onEdit)
           IconButton(onClick = onHistory) {
             Icon(Icons.Default.History, contentDescription = "سوابق مصرف", tint = AccentCyan)
           }
