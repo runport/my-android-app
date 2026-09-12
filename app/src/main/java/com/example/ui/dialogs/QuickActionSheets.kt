@@ -115,6 +115,8 @@ import com.example.viewmodel.QuickActionType
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.TextButton
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.ui.components.ManagementEditButton
+import com.example.ui.components.ManagementDeleteButton
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -3544,14 +3546,7 @@ fun MultiModelCuttingSheet(
               fontWeight = FontWeight.Bold
             )
             if (modelItems.size > 1) {
-              IconButton(
-                onClick = {
-                  modelItems = modelItems.toMutableList().also { it.removeAt(index) }
-                },
-                modifier = Modifier.size(28.dp)
-              ) {
-                Icon(Icons.Default.Delete, contentDescription = "حذف", tint = StatusDanger, modifier = Modifier.size(18.dp))
-              }
+              ManagementDeleteButton(onClick = {                  modelItems = modelItems.toMutableList().also { it.removeAt(index) }                })
             }
           }
 
@@ -5003,14 +4998,7 @@ fun RollHistoryModal(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.End
               ) {
-                IconButton(
-                  onClick = {
-                    editingUsage = usage
-                  },
-                  modifier = Modifier.size(26.dp)
-                ) {
-                  Icon(Icons.Default.Edit, contentDescription = "ویرایش", tint = AccentCyan, modifier = Modifier.size(14.dp))
-                }
+                ManagementEditButton(onClick = {                    editingUsage = usage                  })
               }
             }
           }
