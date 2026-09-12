@@ -71,6 +71,7 @@ import com.example.ui.dialogs.WaybillDetailsDialog
 import com.example.util.UnitFormatter
 import com.example.ui.dialogs.CategoryManagerDialog
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.material.icons.filled.Build
 
 enum class InventoryCategory(val title: String) {
   FINISHED_GOODS("محصولات آماده"),
