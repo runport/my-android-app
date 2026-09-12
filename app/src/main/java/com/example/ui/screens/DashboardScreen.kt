@@ -89,6 +89,7 @@ import com.example.viewmodel.ManufacturingViewModel
 import com.example.viewmodel.MoreSubSection
 import com.example.viewmodel.QuickActionType
 import com.example.util.ChartFormatter
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 @Composable
 fun DashboardScreen(
@@ -96,18 +97,18 @@ fun DashboardScreen(
   modifier: Modifier = Modifier
 ) {
   val customColors = LocalCustomColors.current
-  val kpis by viewModel.kpiState.collectAsState()
-  val periodFilter by viewModel.periodFilter.collectAsState()
-  val alerts by viewModel.alerts.collectAsState()
-  val orders by viewModel.salesOrders.collectAsState()
-  val isDarkTheme by viewModel.isDarkTheme.collectAsState()
-  val donutSlices by viewModel.inventoryDonutSlices.collectAsState()
-  val factorySettings by viewModel.factorySettings.collectAsState()
-  val timeRange by viewModel.timeRangeState.collectAsState()
-  val combinedChartPoints by viewModel.combinedChartPoints.collectAsState()
-  val chartDisplayMetric by viewModel.chartDisplayMetric.collectAsState()
-  val showChartValues by viewModel.showChartValues.collectAsState()
-  val customPeriodDays by viewModel.customPeriodDays.collectAsState()
+  val kpis by viewModel.kpiState.collectAsStateWithLifecycle()
+  val periodFilter by viewModel.periodFilter.collectAsStateWithLifecycle()
+  val alerts by viewModel.alerts.collectAsStateWithLifecycle()
+  val orders by viewModel.salesOrders.collectAsStateWithLifecycle()
+  val isDarkTheme by viewModel.isDarkTheme.collectAsStateWithLifecycle()
+  val donutSlices by viewModel.inventoryDonutSlices.collectAsStateWithLifecycle()
+  val factorySettings by viewModel.factorySettings.collectAsStateWithLifecycle()
+  val timeRange by viewModel.timeRangeState.collectAsStateWithLifecycle()
+  val combinedChartPoints by viewModel.combinedChartPoints.collectAsStateWithLifecycle()
+  val chartDisplayMetric by viewModel.chartDisplayMetric.collectAsStateWithLifecycle()
+  val showChartValues by viewModel.showChartValues.collectAsStateWithLifecycle()
+  val customPeriodDays by viewModel.customPeriodDays.collectAsStateWithLifecycle()
 
   var showChartSettingsDialog by remember { mutableStateOf(false) }
   var showCustomDateRangeDialog by remember { mutableStateOf(false) }

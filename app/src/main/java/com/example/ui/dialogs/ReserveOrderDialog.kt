@@ -59,6 +59,7 @@ import com.example.ui.theme.StatusDanger
 import com.example.ui.theme.StatusSuccess
 import com.example.ui.theme.StatusWarning
 import com.example.viewmodel.ManufacturingViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 /**
  * دیالوگ رزرو سفارش مشتری - فاز ۴.۱
@@ -70,9 +71,9 @@ fun ReserveOrderDialog(
     onDismiss: () -> Unit
 ) {
     val customColors = LocalCustomColors.current
-    val customers by viewModel.customers.collectAsState()
-    val products by viewModel.products.collectAsState()
-    val inventory by viewModel.inventory.collectAsState()
+    val customers by viewModel.customers.collectAsStateWithLifecycle()
+    val products by viewModel.products.collectAsStateWithLifecycle()
+    val inventory by viewModel.inventory.collectAsStateWithLifecycle()
 
     var selectedCustomer by remember { mutableStateOf<CustomerEntity?>(null) }
     var selectedProduct by remember { mutableStateOf<ProductEntity?>(null) }

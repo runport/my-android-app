@@ -70,10 +70,11 @@ import com.example.viewmodel.QuickActionType
 import com.example.ui.dialogs.WaybillDetailsDialog
 import com.example.util.UnitFormatter
 import com.example.ui.dialogs.CategoryManagerDialog
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 enum class InventoryCategory(val title: String) {
   FINISHED_GOODS("محصولات آماده"),
-  FABRIC_ROLLS("طاقه‌ها (فاز ۲)"),
+  FABRIC_ROLLS("طاقه‌ها"),
   RAW_FABRICS("دسته‌های پارچه"),
   ACCESSORIES("ملزومات"),
   SHIPPING_RECORDS("باربری")
@@ -87,12 +88,12 @@ fun InventoryScreen(
   val customColors = LocalCustomColors.current
   var selectedCategory by remember { mutableStateOf(InventoryCategory.FINISHED_GOODS) }
   var showCategoryManager by remember { mutableStateOf(false) }
-  val inventoryItems by viewModel.inventory.collectAsState()
-  val fabrics by viewModel.fabrics.collectAsState()
-  val fabricRolls by viewModel.fabricRolls.collectAsState()
-  val shippingExpenses by viewModel.shippingExpenses.collectAsState()
-  val shippingAverages by viewModel.shippingAverages.collectAsState()
-  val productions by viewModel.productions.collectAsState()
+  val inventoryItems by viewModel.inventory.collectAsStateWithLifecycle()
+  val fabrics by viewModel.fabrics.collectAsStateWithLifecycle()
+  val fabricRolls by viewModel.fabricRolls.collectAsStateWithLifecycle()
+  val shippingExpenses by viewModel.shippingExpenses.collectAsStateWithLifecycle()
+  val shippingAverages by viewModel.shippingAverages.collectAsStateWithLifecycle()
+  val productions by viewModel.productions.collectAsStateWithLifecycle()
 
   val totalReady = inventoryItems.sumOf { it.readyForShipment }
   val totalReserved = inventoryItems.sumOf { it.reservedQuantity }
@@ -155,7 +156,7 @@ fun InventoryScreen(
           ) {
             Icon(Icons.Default.Inventory2, contentDescription = null, tint = Color.Black, modifier = Modifier.size(14.dp))
             Spacer(Modifier.size(4.dp))
-            Text("+ طاقه جدید (فاز ۲)", style = MaterialTheme.typography.labelSmall, color = Color.Black, fontWeight = FontWeight.Bold)
+            Text("+ طاقه جدید", style = MaterialTheme.typography.labelSmall, color = Color.Black, fontWeight = FontWeight.Bold)
           }
 
           Button(
@@ -537,7 +538,7 @@ fun InventoryScreen(
 
 
   // دیالوگ جزئیات سهم کرایه طاقه
-  val waybillTarget by viewModel.waybillDetailsTarget.collectAsState()
+  val waybillTarget by viewModel.waybillDetailsTarget.collectAsStateWithLifecycle()
   waybillTarget?.let { roll ->
     WaybillDetailsDialog(
       repository = viewModel.getRepository(),

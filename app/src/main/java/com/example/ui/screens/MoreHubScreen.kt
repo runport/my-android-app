@@ -91,6 +91,7 @@ import com.example.data.model.DashboardLayoutArrangement
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.activity.compose.BackHandler
 import com.example.data.model.CustomerEntity
 import com.example.data.model.CuttingEntity
 import com.example.data.model.ModelStandardEntity
@@ -116,6 +117,7 @@ import com.example.viewmodel.QuickActionType
 import com.example.ui.screens.ReadyGoodsScreen
 import com.example.ui.dialogs.DeleteAllDataConfirmDialog
 import com.example.ui.dialogs.RestoreFromFileDialog
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 @Composable
 fun MoreHubScreen(
@@ -123,27 +125,34 @@ fun MoreHubScreen(
   modifier: Modifier = Modifier
 ) {
   val customColors = LocalCustomColors.current
-  val selectedSubSection by viewModel.selectedSubSection.collectAsState()
-  val orders by viewModel.salesOrders.collectAsState()
-  val productions by viewModel.productions.collectAsState()
-  val cuttings by viewModel.cuttings.collectAsState()
-  val customers by viewModel.customers.collectAsState()
-  val suppliers by viewModel.suppliers.collectAsState()
-  val standards by viewModel.standards.collectAsState()
-  val isDarkTheme by viewModel.isDarkTheme.collectAsState()
-  val selectedFont by viewModel.selectedFont.collectAsState()
-  val factorySettings by viewModel.factorySettings.collectAsState()
-  val statusHistory by viewModel.orderStatusHistory.collectAsState()
-  val categories by viewModel.categories.collectAsState()
-  val products by viewModel.products.collectAsState()
-  val materials by viewModel.materials.collectAsState()
-  val colors by viewModel.colors.collectAsState()
-  val sizes by viewModel.sizes.collectAsState()
-  val boms by viewModel.boms.collectAsState()
-  val materialUnits by viewModel.materialUnits.collectAsState()
-  val salesChannels by viewModel.salesChannels.collectAsState()
-  val purchaseOrders by viewModel.purchaseOrders.collectAsState()
-  val inventoryLedger by viewModel.inventoryLedger.collectAsState()
+  val selectedSubSection by viewModel.selectedSubSection.collectAsStateWithLifecycle()
+
+  // FIX v3: handle system back — return to hub root if in a sub-section
+  BackHandler(
+    enabled = selectedSubSection == MoreSubSection.READY_GOODS
+  ) {
+    viewModel.setSubSection(MoreSubSection.ORDERS)
+  }
+  val orders by viewModel.salesOrders.collectAsStateWithLifecycle()
+  val productions by viewModel.productions.collectAsStateWithLifecycle()
+  val cuttings by viewModel.cuttings.collectAsStateWithLifecycle()
+  val customers by viewModel.customers.collectAsStateWithLifecycle()
+  val suppliers by viewModel.suppliers.collectAsStateWithLifecycle()
+  val standards by viewModel.standards.collectAsStateWithLifecycle()
+  val isDarkTheme by viewModel.isDarkTheme.collectAsStateWithLifecycle()
+  val selectedFont by viewModel.selectedFont.collectAsStateWithLifecycle()
+  val factorySettings by viewModel.factorySettings.collectAsStateWithLifecycle()
+  val statusHistory by viewModel.orderStatusHistory.collectAsStateWithLifecycle()
+  val categories by viewModel.categories.collectAsStateWithLifecycle()
+  val products by viewModel.products.collectAsStateWithLifecycle()
+  val materials by viewModel.materials.collectAsStateWithLifecycle()
+  val colors by viewModel.colors.collectAsStateWithLifecycle()
+  val sizes by viewModel.sizes.collectAsStateWithLifecycle()
+  val boms by viewModel.boms.collectAsStateWithLifecycle()
+  val materialUnits by viewModel.materialUnits.collectAsStateWithLifecycle()
+  val salesChannels by viewModel.salesChannels.collectAsStateWithLifecycle()
+  val purchaseOrders by viewModel.purchaseOrders.collectAsStateWithLifecycle()
+  val inventoryLedger by viewModel.inventoryLedger.collectAsStateWithLifecycle()
   val context = LocalContext.current
 
   var showResetConfirmDialog by remember { mutableStateOf(false) }

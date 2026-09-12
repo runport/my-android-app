@@ -114,6 +114,7 @@ import com.example.viewmodel.ManufacturingViewModel
 import com.example.viewmodel.QuickActionType
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.TextButton
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -124,15 +125,15 @@ fun QuickActionsModalBottomSheet(
   onDismiss: () -> Unit
 ) {
   val customColors = LocalCustomColors.current
-  val editingFabric by viewModel.editingFabric.collectAsState()
-  val editingInventory by viewModel.editingInventory.collectAsState()
-  val editingOrder by viewModel.editingOrder.collectAsState()
-  val editingCustomer by viewModel.editingCustomer.collectAsState()
-  val editingFabricRoll by viewModel.editingFabricRoll.collectAsState()
-  val editingShippingExpense by viewModel.editingShippingExpense.collectAsState()
-  val allShippingExpenses by viewModel.shippingExpenses.collectAsState()
-  val allFabricRolls by viewModel.fabricRolls.collectAsState()
-  val factorySettings by viewModel.factorySettings.collectAsState()
+  val editingFabric by viewModel.editingFabric.collectAsStateWithLifecycle()
+  val editingInventory by viewModel.editingInventory.collectAsStateWithLifecycle()
+  val editingOrder by viewModel.editingOrder.collectAsStateWithLifecycle()
+  val editingCustomer by viewModel.editingCustomer.collectAsStateWithLifecycle()
+  val editingFabricRoll by viewModel.editingFabricRoll.collectAsStateWithLifecycle()
+  val editingShippingExpense by viewModel.editingShippingExpense.collectAsStateWithLifecycle()
+  val allShippingExpenses by viewModel.shippingExpenses.collectAsStateWithLifecycle()
+  val allFabricRolls by viewModel.fabricRolls.collectAsStateWithLifecycle()
+  val factorySettings by viewModel.factorySettings.collectAsStateWithLifecycle()
 
   ModalBottomSheet(
     onDismissRequest = onDismiss,
@@ -700,9 +701,9 @@ fun QuickFabricForm(
   onBack: () -> Unit
 ) {
   val customColors = LocalCustomColors.current
-  val existingFabrics by viewModel.fabrics.collectAsState()
-  val existingSuppliers by viewModel.suppliers.collectAsState()
-  val factorySettings by viewModel.factorySettings.collectAsState()
+  val existingFabrics by viewModel.fabrics.collectAsStateWithLifecycle()
+  val existingSuppliers by viewModel.suppliers.collectAsStateWithLifecycle()
+  val factorySettings by viewModel.factorySettings.collectAsStateWithLifecycle()
 
   var showItemPicker by remember { mutableStateOf(false) }
   var showSupplierPicker by remember { mutableStateOf(false) }
@@ -1082,8 +1083,8 @@ fun QuickReadyGoodsForm(
   onBack: () -> Unit
 ) {
   val customColors = LocalCustomColors.current
-  val existingItems by viewModel.inventory.collectAsState()
-  val availableRolls by viewModel.availableFabricRolls.collectAsState()
+  val existingItems by viewModel.inventory.collectAsStateWithLifecycle()
+  val availableRolls by viewModel.availableFabricRolls.collectAsStateWithLifecycle()
   val readyGoodsList = remember(existingItems) {
     existingItems.filter { it.category == "محصولات آماده" || it.readyForShipment > 0 || it.availableForSale > 0 }
   }
@@ -1689,9 +1690,9 @@ fun QuickAccessoryForm(
   onBack: () -> Unit
 ) {
   val customColors = LocalCustomColors.current
-  val existingItems by viewModel.inventory.collectAsState()
-  val existingSuppliers by viewModel.suppliers.collectAsState()
-  val factorySettings by viewModel.factorySettings.collectAsState()
+  val existingItems by viewModel.inventory.collectAsStateWithLifecycle()
+  val existingSuppliers by viewModel.suppliers.collectAsStateWithLifecycle()
+  val factorySettings by viewModel.factorySettings.collectAsStateWithLifecycle()
 
   val accessoriesList = remember(existingItems) {
     existingItems.filter { it.category == "ملزومات" || it.code.startsWith("ACC") }
@@ -2153,8 +2154,8 @@ fun QuickSaleForm(
   onBack: () -> Unit
 ) {
   val customColors = LocalCustomColors.current
-  val customers by viewModel.customers.collectAsState()
-  val products by viewModel.products.collectAsState()
+  val customers by viewModel.customers.collectAsStateWithLifecycle()
+  val products by viewModel.products.collectAsStateWithLifecycle()
   var showCustomerPicker by remember { mutableStateOf(false) }
   var showProductPicker by remember { mutableStateOf(false) }
 
@@ -2458,8 +2459,8 @@ fun QuickProductionForm(
   onBack: () -> Unit
 ) {
   val customColors = LocalCustomColors.current
-  val availableRolls by viewModel.availableFabricRolls.collectAsState()
-  val inventoryItems by viewModel.inventory.collectAsState()
+  val availableRolls by viewModel.availableFabricRolls.collectAsStateWithLifecycle()
+  val inventoryItems by viewModel.inventory.collectAsStateWithLifecycle()
   val accessoriesList = remember(inventoryItems) {
     inventoryItems.filter { it.category == "ملزومات" || it.unitCostPrice > 0L }
   }
@@ -3374,7 +3375,7 @@ fun MultiModelCuttingSheet(
   onClose: () -> Unit
 ) {
   val customColors = LocalCustomColors.current
-  val fabrics by viewModel.fabrics.collectAsState()
+  val fabrics by viewModel.fabrics.collectAsStateWithLifecycle()
   val context = androidx.compose.ui.platform.LocalContext.current
 
   // Selected fabric
@@ -3713,8 +3714,8 @@ fun QuickRollForm(
   onBack: () -> Unit
 ) {
   val customColors = LocalCustomColors.current
-  val existingFabrics by viewModel.fabrics.collectAsState()
-  val existingSuppliers by viewModel.suppliers.collectAsState()
+  val existingFabrics by viewModel.fabrics.collectAsStateWithLifecycle()
+  val existingSuppliers by viewModel.suppliers.collectAsStateWithLifecycle()
 
   var showFabricPicker by remember { mutableStateOf(false) }
   var showSupplierPicker by remember { mutableStateOf(false) }
@@ -4059,15 +4060,15 @@ fun QuickRollConsumeForm(
   onBack: () -> Unit
 ) {
   val customColors = LocalCustomColors.current
-  val availableRolls by viewModel.availableFabricRolls.collectAsState()
-  val standards by viewModel.standards.collectAsState()
+  val availableRolls by viewModel.availableFabricRolls.collectAsStateWithLifecycle()
+  val standards by viewModel.standards.collectAsStateWithLifecycle()
 
   var selectedRollId by remember { mutableStateOf<Long?>(null) }
   val selectedRoll = remember(availableRolls, selectedRollId) {
     availableRolls.firstOrNull { it.id == selectedRollId } ?: availableRolls.firstOrNull()
   }
 
-  val products by viewModel.products.collectAsState()
+  val products by viewModel.products.collectAsStateWithLifecycle()
   var showProductPicker by remember { mutableStateOf(false) }
   var modelName by remember { mutableStateOf("هودی بیسیک زمستانه") }
   var modelCode by remember { mutableStateOf("HD-204") }
@@ -4079,7 +4080,7 @@ fun QuickRollConsumeForm(
   var profitPercentText by remember { mutableStateOf("35") }
   var baseMaterialsText by remember { mutableStateOf("15000") }
 
-  val productions by viewModel.productions.collectAsState()
+  val productions by viewModel.productions.collectAsStateWithLifecycle()
   val relatedProductions = remember(productions, selectedRoll) {
     if (selectedRoll == null) emptyList()
     else productions.filter { it.rollId == selectedRoll.id && it.status != "تکمیل شده" && it.status != "آماده ارسال / تکمیل موجودی" }
@@ -4648,7 +4649,7 @@ fun QuickShippingExpenseForm(
   onBack: () -> Unit
 ) {
   val customColors = LocalCustomColors.current
-  val availableRolls by viewModel.availableFabricRolls.collectAsState()
+  val availableRolls by viewModel.availableFabricRolls.collectAsStateWithLifecycle()
 
   var trackingNumber by remember { mutableStateOf("BL-${(10000..99999).random()}") }
   var title by remember { mutableStateOf("کرایه حمل پارت پارچه و ملزومات") }
@@ -4873,8 +4874,8 @@ fun RollHistoryModal(
   onClose: () -> Unit
 ) {
   val customColors = LocalCustomColors.current
-  val selectedRoll by viewModel.selectedRollForHistory.collectAsState()
-  val allUsages by viewModel.rollUsages.collectAsState()
+  val selectedRoll by viewModel.selectedRollForHistory.collectAsStateWithLifecycle()
+  val allUsages by viewModel.rollUsages.collectAsStateWithLifecycle()
 
   val usages = remember(allUsages, selectedRoll) {
     if (selectedRoll != null) allUsages.filter { it.rollId == selectedRoll!!.id } else emptyList()
@@ -5251,7 +5252,7 @@ fun QuickSaleReturnForm(
   onBack: () -> Unit
 ) {
   val customColors = LocalCustomColors.current
-  val orders by viewModel.salesOrders.collectAsState()
+  val orders by viewModel.salesOrders.collectAsStateWithLifecycle()
   var selectedOrderId by remember { mutableStateOf<Long?>(orders.firstOrNull()?.id) }
   val selectedOrder = orders.find { it.id == selectedOrderId }
 
@@ -5359,8 +5360,8 @@ fun QuickPurchaseOrderForm(
   onBack: () -> Unit
 ) {
   val customColors = LocalCustomColors.current
-  val suppliers by viewModel.suppliers.collectAsState()
-  val materials by viewModel.materials.collectAsState()
+  val suppliers by viewModel.suppliers.collectAsStateWithLifecycle()
+  val materials by viewModel.materials.collectAsStateWithLifecycle()
 
   var selectedSupplierId by remember { mutableStateOf<Long?>(suppliers.firstOrNull()?.id) }
   val selectedSupplier = suppliers.find { it.id == selectedSupplierId }
@@ -5539,11 +5540,11 @@ fun QuickAtomicBOMProductionForm(
   onBack: () -> Unit
 ) {
   val customColors = LocalCustomColors.current
-  val products by viewModel.products.collectAsState()
-  val boms by viewModel.boms.collectAsState()
-  val materials by viewModel.materials.collectAsState()
-  val colors by viewModel.colors.collectAsState()
-  val sizes by viewModel.sizes.collectAsState()
+  val products by viewModel.products.collectAsStateWithLifecycle()
+  val boms by viewModel.boms.collectAsStateWithLifecycle()
+  val materials by viewModel.materials.collectAsStateWithLifecycle()
+  val colors by viewModel.colors.collectAsStateWithLifecycle()
+  val sizes by viewModel.sizes.collectAsStateWithLifecycle()
 
   var selectedProductId by remember { mutableStateOf<Long?>(products.firstOrNull()?.id) }
   val selectedProduct = products.find { it.id == selectedProductId }
@@ -5706,9 +5707,9 @@ fun QuickMarketPriceUpdateForm(
   onBack: () -> Unit
 ) {
   val customColors = LocalCustomColors.current
-  val materials by viewModel.materials.collectAsState()
-  val products by viewModel.products.collectAsState()
-  val boms by viewModel.boms.collectAsState()
+  val materials by viewModel.materials.collectAsStateWithLifecycle()
+  val products by viewModel.products.collectAsStateWithLifecycle()
+  val boms by viewModel.boms.collectAsStateWithLifecycle()
 
   var selectedMaterialId by remember { mutableStateOf<Long?>(materials.firstOrNull()?.id) }
   val selectedMaterial = materials.find { it.id == selectedMaterialId }
@@ -5818,7 +5819,7 @@ fun QuickCustomerPaymentForm(
   onBack: () -> Unit
 ) {
   val customColors = LocalCustomColors.current
-  val customers by viewModel.customers.collectAsState()
+  val customers by viewModel.customers.collectAsStateWithLifecycle()
   var selectedCustomerId by remember { mutableStateOf<Long?>(customers.firstOrNull()?.id) }
   val selectedCust = customers.find { it.id == selectedCustomerId }
 
@@ -5920,7 +5921,7 @@ fun QuickSupplierPaymentForm(
   onBack: () -> Unit
 ) {
   val customColors = LocalCustomColors.current
-  val suppliers by viewModel.suppliers.collectAsState()
+  val suppliers by viewModel.suppliers.collectAsStateWithLifecycle()
   var selectedSupplierId by remember { mutableStateOf<Long?>(suppliers.firstOrNull()?.id) }
   val selectedSup = suppliers.find { it.id == selectedSupplierId }
 
@@ -6022,8 +6023,8 @@ fun QuickInventoryAuditForm(
   onBack: () -> Unit
 ) {
   val customColors = LocalCustomColors.current
-  val materials by viewModel.materials.collectAsState()
-  val inventory by viewModel.inventory.collectAsState()
+  val materials by viewModel.materials.collectAsStateWithLifecycle()
+  val inventory by viewModel.inventory.collectAsStateWithLifecycle()
 
   var itemType by remember { mutableStateOf("MATERIAL") } // MATERIAL, FINISHED_GOOD
   var selectedMaterialId by remember { mutableStateOf<Long?>(materials.firstOrNull()?.id) }
@@ -6165,7 +6166,7 @@ fun PriceUpdateDialog(
   onDismiss: () -> Unit
 ) {
   val customColors = LocalCustomColors.current
-  val target by viewModel.priceUpdateTarget.collectAsState()
+  val target by viewModel.priceUpdateTarget.collectAsStateWithLifecycle()
 
   if (target == null) return
   val t = target!!

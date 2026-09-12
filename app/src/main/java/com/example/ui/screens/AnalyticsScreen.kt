@@ -72,6 +72,7 @@ import com.example.ui.theme.StatusSuccess
 import com.example.ui.theme.StatusWarning
 import com.example.viewmodel.ManufacturingViewModel
 import com.example.viewmodel.ReportCategory
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 @Composable
 fun AnalyticsScreen(
@@ -79,18 +80,18 @@ fun AnalyticsScreen(
   modifier: Modifier = Modifier
 ) {
   val customColors = LocalCustomColors.current
-  val activeCategory by viewModel.activeReportCategory.collectAsState()
+  val activeCategory by viewModel.activeReportCategory.collectAsStateWithLifecycle()
 
-  val salesReport by viewModel.salesReport.collectAsState()
-  val productionReport by viewModel.productionReport.collectAsState()
-  val inventoryReport by viewModel.inventoryReport.collectAsState()
-  val ordersReport by viewModel.ordersReport.collectAsState()
-  val costReport by viewModel.costReport.collectAsState()
-  val profitReport by viewModel.profitReport.collectAsState()
-  val consumablesReport by viewModel.consumablesReport.collectAsState()
-  val fabricReport by viewModel.fabricReport.collectAsState()
-  val freightReport by viewModel.freightReport.collectAsState()
-  val tailorReport by viewModel.tailorCostReport.collectAsState()
+  val salesReport by viewModel.salesReport.collectAsStateWithLifecycle()
+  val productionReport by viewModel.productionReport.collectAsStateWithLifecycle()
+  val inventoryReport by viewModel.inventoryReport.collectAsStateWithLifecycle()
+  val ordersReport by viewModel.ordersReport.collectAsStateWithLifecycle()
+  val costReport by viewModel.costReport.collectAsStateWithLifecycle()
+  val profitReport by viewModel.profitReport.collectAsStateWithLifecycle()
+  val consumablesReport by viewModel.consumablesReport.collectAsStateWithLifecycle()
+  val fabricReport by viewModel.fabricReport.collectAsStateWithLifecycle()
+  val freightReport by viewModel.freightReport.collectAsStateWithLifecycle()
+  val tailorReport by viewModel.tailorCostReport.collectAsStateWithLifecycle()
 
   LazyColumn(
     modifier = modifier

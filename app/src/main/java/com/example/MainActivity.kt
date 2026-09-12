@@ -91,6 +91,7 @@ import com.example.viewmodel.MainTab
 import com.example.viewmodel.ManufacturingViewModel
 import com.example.viewmodel.QuickActionType
 import kotlinx.coroutines.launch
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 class MainActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
@@ -105,8 +106,8 @@ class MainActivity : ComponentActivity() {
 
     setContent {
       val viewModel = remember { ManufacturingViewModel(repository) }
-      val isDarkTheme by viewModel.isDarkTheme.collectAsState()
-      val selectedFont by viewModel.selectedFont.collectAsState()
+      val isDarkTheme by viewModel.isDarkTheme.collectAsStateWithLifecycle()
+      val selectedFont by viewModel.selectedFont.collectAsStateWithLifecycle()
 
       // Request runtime notification permission on Android 13+
       val context = LocalContext.current
@@ -126,7 +127,7 @@ class MainActivity : ComponentActivity() {
         }
       }
 
-      val customFontFamily by viewModel.customFontFamily.collectAsState()
+      val customFontFamily by viewModel.customFontFamily.collectAsStateWithLifecycle()
 
       LaunchedEffect(Unit) {
         viewModel.initCustomFont(context)
@@ -150,9 +151,9 @@ class MainActivity : ComponentActivity() {
 fun MainAppScreen(viewModel: ManufacturingViewModel) {
   val context = LocalContext.current
   val customColors = LocalCustomColors.current
-  val selectedTab by viewModel.selectedTab.collectAsState()
-  val activeQuickAction by viewModel.activeQuickAction.collectAsState()
-  val notification by viewModel.notification.collectAsState()
+  val selectedTab by viewModel.selectedTab.collectAsStateWithLifecycle()
+  val activeQuickAction by viewModel.activeQuickAction.collectAsStateWithLifecycle()
+  val notification by viewModel.notification.collectAsStateWithLifecycle()
 
   val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
   val snackbarHostState = remember { SnackbarHostState() }
@@ -213,8 +214,8 @@ fun MainAppScreen(viewModel: ManufacturingViewModel) {
       }
     }
 
-    val selectedDrillDown by viewModel.selectedDrillDown.collectAsState()
-    val sectionSettingsTarget by viewModel.sectionSettingsDialog.collectAsState()
+    val selectedDrillDown by viewModel.selectedDrillDown.collectAsStateWithLifecycle()
+    val sectionSettingsTarget by viewModel.sectionSettingsDialog.collectAsStateWithLifecycle()
 
     selectedDrillDown?.let { drill ->
       com.example.ui.components.DrillDownDialog(

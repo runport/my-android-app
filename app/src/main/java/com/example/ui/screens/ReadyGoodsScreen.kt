@@ -51,6 +51,7 @@ import com.example.ui.theme.StatusSuccess
 import com.example.ui.theme.StatusWarning
 import com.example.util.UnitFormatter
 import com.example.viewmodel.ManufacturingViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 enum class ReadyGoodsTab(val title: String) {
     CUT("برش خورده"),
@@ -66,9 +67,9 @@ fun ReadyGoodsScreen(
     val customColors = LocalCustomColors.current
     var selectedTab by remember { mutableStateOf(ReadyGoodsTab.CUT) }
 
-    val cutParts by viewModel.cutButNotSewnParts.collectAsState()
-    val sewingParts by viewModel.sewingParts.collectAsState()
-    val readyParts by viewModel.readyParts.collectAsState()
+    val cutParts by viewModel.cutButNotSewnParts.collectAsStateWithLifecycle()
+    val sewingParts by viewModel.sewingParts.collectAsStateWithLifecycle()
+    val readyParts by viewModel.readyParts.collectAsStateWithLifecycle()
 
     val currentList = when (selectedTab) {
         ReadyGoodsTab.CUT -> cutParts
