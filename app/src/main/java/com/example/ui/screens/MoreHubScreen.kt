@@ -118,6 +118,9 @@ import com.example.ui.screens.ReadyGoodsScreen
 import com.example.ui.dialogs.DeleteAllDataConfirmDialog
 import com.example.ui.dialogs.RestoreFromFileDialog
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.ui.components.ManagementAddButton
+import com.example.ui.components.ManagementEditButton
+import com.example.ui.components.ManagementDeleteButton
 
 @Composable
 fun MoreHubScreen(
@@ -2462,12 +2465,7 @@ fun SupplierCard(
         }
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
           StatusChip(status = sup.supplyType.ifEmpty { "پارچه و ملزومات" })
-          IconButton(
-            onClick = onDelete,
-            modifier = Modifier.size(32.dp)
-          ) {
-            Icon(Icons.Default.DeleteForever, contentDescription = "حذف تأمین‌کننده", tint = StatusDanger, modifier = Modifier.size(18.dp))
-          }
+          ManagementDeleteButton(onClick = onDelete)
         }
       }
 
