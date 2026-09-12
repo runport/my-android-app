@@ -2543,6 +2543,25 @@ class ManufacturingViewModel(
     }
   }
 
+  fun recordFabricPurchaseAndPropagate(
+    rollId: Long,
+    newPricePerMeter: Long,
+    newPricePerKg: Long = 0L,
+    supplierName: String = "",
+    reason: String = "ثبت خرید جدید"
+  ) {
+    viewModelScope.launch {
+      try {
+        val (success, msg) = repository.recordFabricPurchaseAndPropagate(
+          rollId, newPricePerMeter, newPricePerKg, supplierName, reason
+        )
+        _notification.value = UiNotification(msg, !success)
+      } catch (e: Exception) {
+        _notification.value = UiNotification("خطا در انتشار قیمت: ${e.localizedMessage}", true)
+      }
+    }
+  }
+
   fun updateMaterialPrice(materialId: Long, newPrice: Long, reason: String = "تغییر قیمت بازار") {
     viewModelScope.launch {
       try {

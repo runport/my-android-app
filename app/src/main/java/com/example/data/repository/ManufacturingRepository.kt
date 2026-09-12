@@ -34,6 +34,7 @@ import com.example.data.model.MaterialEntity
 import com.example.data.model.MaterialUnitEntity
 import com.example.data.model.ProductBOMEntity
 import com.example.data.model.MaterialPriceHistoryEntity
+import com.example.data.model.FabricPriceHistoryEntity
 import com.example.data.model.ProductPriceHistoryEntity
 import com.example.data.model.PriceChangeReasonEntity
 import com.example.data.model.PurchaseOrderEntity
@@ -3967,6 +3968,116 @@ class ManufacturingRepository(private val database: AppDatabase) {
    * به‌روزرسانی قیمت روز یک طاقه بدون ثبت خرید جدید.
    * موجودی فیزیکی دست نمی‌خورد؛ فقط قیمت روز و بهای محاسباتی.
    */
+  /**
+   * Phase 15 Patch 2: register a new fabric roll purchase and propagate its price
+   * to all rolls of the same fabricCategoryId.
+   *
+   * Interpretation B: buyPricePerMeter/Kg (historical) is preserved untouched.
+   * currentPricePerMeter/Kg (market) is updated on all same-category rolls.
+   */
+  suspend fun recordFabricPurchaseAndPropagate(
+    rollId: Long,
+    newPricePerMeter: Long,
+    newPricePerKg: Long = 0L,
+    supplierName: String = "",
+    reason: String = "ثبت خرید جدید",
+    operator: String = "مدیر کارگاه"
+  ): Pair<Boolean, String> = database.withTransaction {
+    val roll = database.fabricRollDao().getRollById(rollId)
+      ?: return@withTransaction Pair(false, "طاقه یافت نشد")
+    if (newPricePerMeter <= 0L && newPricePerKg <= 0L) {
+      return@withTransaction Pair(false, "قیمت جدید باید بیشتر از صفر باشد")
+    }
+
+    val today = com.example.util.PersianDateHelper.getTodayPersianDate()
+    val now = System.currentTimeMillis()
+
+    val metersPerKg = if (roll.metersPerKg > 0.0) roll.metersPerKg else 0.0
+    val finalPricePerMeter = if (newPricePerMeter > 0L) newPricePerMeter
+      else if (newPricePerKg > 0L && metersPerKg > 0.0) (newPricePerKg / metersPerKg).toLong()
+      else 0L
+    val finalPricePerKg = if (newPricePerKg > 0L) newPricePerKg
+      else if (finalPricePerMeter > 0L && metersPerKg > 0.0) (finalPricePerMeter * metersPerKg).toLong()
+      else 0L
+
+    if (finalPricePerMeter <= 0L) {
+      return@withTransaction Pair(false, "قیمت معتبر نیست")
+    }
+
+    val oldCurrentPerMeter = if (roll.currentPricePerMeter > 0L) roll.currentPricePerMeter else roll.buyPricePerMeter
+    val oldCurrentPerKg = if (roll.currentPricePerKg > 0L) roll.currentPricePerKg else roll.buyPricePerKg
+
+    // 1. Update triggering roll
+    database.fabricRollDao().updateRoll(
+      roll.copy(
+        currentPricePerMeter = finalPricePerMeter,
+        currentPricePerKg = finalPricePerKg,
+        lastPriceUpdateDate = today,
+        lastPriceUpdateTimestamp = now
+      )
+    )
+
+    // 2. Propagate to same-category rolls
+    var affectedCount = 1
+    val categoryId = roll.fabricCategoryId
+
+    if (categoryId != null) {
+      val sameCategoryRolls = database.fabricRollDao().getRollsByCategory(categoryId)
+      sameCategoryRolls.forEach { other ->
+        if (other.id != roll.id) {
+          val otherMetersPerKg = if (other.metersPerKg > 0.0) other.metersPerKg else 0.0
+          val otherFinalPerKg = if (finalPricePerMeter > 0L && otherMetersPerKg > 0.0)
+            (finalPricePerMeter * otherMetersPerKg).toLong() else finalPricePerKg
+          database.fabricRollDao().updateRoll(
+            other.copy(
+              currentPricePerMeter = finalPricePerMeter,
+              currentPricePerKg = otherFinalPerKg,
+              lastPriceUpdateDate = today,
+              lastPriceUpdateTimestamp = now
+            )
+          )
+          affectedCount++
+          updateInProgressProductsAfterPriceChange(other.id, finalPricePerMeter, operator)
+        }
+      }
+    }
+
+    // 3. Record history
+    val changeM = finalPricePerMeter - oldCurrentPerMeter
+    val changePercent = if (oldCurrentPerMeter > 0L)
+      (changeM.toDouble() / oldCurrentPerMeter) * 100.0 else 0.0
+    try {
+      database.fabricPriceHistoryDao().insert(
+        FabricPriceHistoryEntity(
+          fabricCategoryId = categoryId,
+          fabricCategoryName = roll.fabricCategoryName,
+          triggeringRollId = roll.id,
+          triggeringRollCode = roll.rollCode,
+          oldPricePerMeter = oldCurrentPerMeter,
+          newPricePerMeter = finalPricePerMeter,
+          oldPricePerKg = oldCurrentPerKg,
+          newPricePerKg = finalPricePerKg,
+          date = today,
+          timestamp = now,
+          changeAmountPerMeter = changeM,
+          changePercentPerMeter = changePercent,
+          affectedRollCount = affectedCount,
+          reason = reason,
+          source = "PURCHASE",
+          supplierName = if (supplierName.isNotBlank()) supplierName else roll.supplierName,
+          recordedBy = operator
+        )
+      )
+    } catch (_: Exception) {}
+
+    val msg = if (affectedCount > 1)
+      "قیمت $affectedCount طاقه از دسته ${roll.fabricCategoryName} به‌روزرسانی شد ($finalPricePerMeter تومان/متر)"
+    else
+      "قیمت طاقه ${roll.rollCode} به‌روزرسانی شد ($finalPricePerMeter تومان/متر)"
+
+    Pair(true, msg)
+  }
+
   suspend fun updateFabricRollCurrentPrice(
     rollId: Long, newPricePerMeter: Long, newPricePerKg: Long = 0L,
     reason: String = "تغییر قیمت بازار", operator: String = "مدیر کارگاه"

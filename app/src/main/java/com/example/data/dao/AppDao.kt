@@ -309,6 +309,9 @@ interface FabricRollDao {
 
   @Query("DELETE FROM fabric_rolls WHERE id = :id")
   suspend fun deleteById(id: Long)
+
+  @Query("SELECT * FROM fabric_rolls WHERE fabricCategoryId = :categoryId AND remainingMeters > 0.5 ORDER BY id DESC")
+  suspend fun getRollsByCategory(categoryId: Long): List<FabricRollEntity>
 }
 
 @Dao
