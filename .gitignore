@@ -16,3 +16,18 @@
 local.properties
 .env
 debug.keystore
+# Debug scripts and logs (do not commit)
+crash_*.txt
+crash_*.log
+diagnose_*.py
+show_*.py
+inspect_*.py
+trace_*.py
+get_crash_*.sh
+fix_*.py
+fix_v3_*.py
+commit_cleanup.sh
+phase*.py
+finalize_*.sh
+finish.sh
+clean_repo.py
