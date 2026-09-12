@@ -4078,6 +4078,8 @@ fun QuickRollConsumeForm(
   var selectedStatus by remember { mutableStateOf("برش خورده") }
   var profitAmountText by remember { mutableStateOf("") }
   var settingsApplied by remember { mutableStateOf(false) }
+  var sellingPriceText by remember { mutableStateOf("") }
+  var sellingPriceManuallyEdited by remember { mutableStateOf(false) }
 
   val productions by viewModel.productions.collectAsStateWithLifecycle()
   val allCuttings by viewModel.cuttings.collectAsStateWithLifecycle()
@@ -4094,6 +4096,7 @@ fun QuickRollConsumeForm(
       }
     }
   }
+
 
   val relatedProductions = remember(productions, selectedRoll) {
     if (selectedRoll == null) emptyList()
@@ -4122,6 +4125,14 @@ fun QuickRollConsumeForm(
     (tailorCostText.toLongOrNull() ?: 0L) +
     (baseMaterialsText.toLongOrNull() ?: 0L) +
     ((otherDirectCostText.toLongOrNull() ?: 0L) / garmentCount.coerceAtLeast(1))
+
+  LaunchedEffect(liveSubtotal, profitPercentText, profitAmountText) {
+    if (!sellingPriceManuallyEdited) {
+      val pct = profitPercentText.toDoubleOrNull() ?: 0.0
+      val profitAmt = (liveSubtotal * pct / 100.0).toLong()
+      sellingPriceText = (liveSubtotal + profitAmt).toString()
+    }
+  }
   val allocatedFabricCost = (metersUsed * buyPriceMeter).toLong()
   val allocatedShipping = selectedRoll?.allocatedShippingCost ?: 0L
   val allocatedShippingCost = if (rollInitialMeters > 0.0) ((metersUsed / rollInitialMeters) * allocatedShipping).toLong() else 0L
@@ -4518,9 +4529,18 @@ fun QuickRollConsumeForm(
           Text("سود (${profitPct.toInt()}٪):", fontSize = 11.sp, color = customColors.textMuted)
           Text(CurrencyHelper.formatToman(profitVal), fontSize = 11.sp, color = StatusSuccess)
         }
+        ExecutiveTextField(
+          label = "قیمت فروش هر کار (قابل ویرایش)",
+          value = sellingPriceText,
+          keyboardType = KeyboardType.Number,
+          onValueChange = {
+            sellingPriceText = it
+            sellingPriceManuallyEdited = true
+          }
+        )
         Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween) {
-          Text("قیمت فروش پیشنهادی هر کار:", fontSize = 12.sp, color = customColors.textPrimary, fontWeight = FontWeight.Bold)
-          Text(CurrencyHelper.formatToman(finalUnitPrice), fontSize = 13.sp, color = AccentCyan, fontWeight = FontWeight.Bold)
+          Text("پیشنهاد خودکار بر اساس هزینه و سود:", fontSize = 10.sp, color = customColors.textMuted)
+          Text(CurrencyHelper.formatToman(finalUnitPrice), fontSize = 11.sp, color = AccentCyan, fontWeight = FontWeight.Bold)
         }
       }
     }
@@ -4753,7 +4773,10 @@ fun QuickRollConsumeForm(
 
               Button(
                 onClick = {
-                  viewModel.completeProductionToReadyGoods(prod)
+                  viewModel.completeProductionToReadyGoods(
+                    prod,
+                    sellingPriceText.toLongOrNull() ?: 0L
+                  )
                 },
                 modifier = Modifier
                   .fillMaxWidth()
