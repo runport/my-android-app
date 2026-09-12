@@ -4080,6 +4080,10 @@ fun QuickRollConsumeForm(
   var settingsApplied by remember { mutableStateOf(false) }
 
   val productions by viewModel.productions.collectAsStateWithLifecycle()
+  val allCuttings by viewModel.cuttings.collectAsStateWithLifecycle()
+  val cuttingPartsForRoll = remember(allCuttings, selectedRoll?.id) {
+    selectedRoll?.let { r -> allCuttings.filter { it.rollId == r.id } } ?: emptyList()
+  }
   val factorySettings by viewModel.factorySettings.collectAsStateWithLifecycle()
   LaunchedEffect(factorySettings) {
     if (!settingsApplied) {
@@ -4218,6 +4222,56 @@ fun QuickRollConsumeForm(
       }
     }
 
+    // Cutting Parts Summary (Phase 15 Patch 3C)
+    if (cuttingPartsForRoll.isNotEmpty()) {
+      Box(
+        modifier = Modifier
+          .fillMaxWidth()
+          .clip(RoundedCornerShape(12.dp))
+          .background(customColors.cardElevated)
+          .border(1.dp, customColors.border, RoundedCornerShape(12.dp))
+          .padding(12.dp)
+      ) {
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+          Text(
+            "پارت‌های برش این طاقه (${cuttingPartsForRoll.size} مورد):",
+            style = MaterialTheme.typography.labelMedium,
+            color = AccentIndigo,
+            fontWeight = FontWeight.Bold
+          )
+          cuttingPartsForRoll.forEach { part ->
+            Row(
+              Modifier.fillMaxWidth(),
+              Arrangement.SpaceBetween,
+              Alignment.CenterVertically
+            ) {
+              Column {
+                Text(
+                  "${part.partTitle} - ${part.modelName}",
+                  fontSize = 11.sp,
+                  color = customColors.textPrimary,
+                  fontWeight = FontWeight.Bold
+                )
+                Text(
+                  "کد: ${part.modelCode} | تعداد: ${part.cutQuantity} عدد | تاریخ: ${part.date}",
+                  fontSize = 10.sp,
+                  color = customColors.textMuted
+                )
+              }
+              Box(
+                modifier = Modifier
+                  .clip(RoundedCornerShape(4.dp))
+                  .background(AccentCyan.copy(alpha = 0.2f))
+                  .padding(horizontal = 6.dp, vertical = 2.dp)
+              ) {
+                Text(part.status, fontSize = 10.sp, color = AccentCyan, fontWeight = FontWeight.Bold)
+              }
+            }
+          }
+        }
+      }
+    }
+
     // Modular Unit Selector: Meter vs Kilogram
     Row(
       modifier = Modifier
@@ -4349,6 +4403,9 @@ fun QuickRollConsumeForm(
         onItemSelected = { p ->
           modelName = p.name
           modelCode = p.code
+          standards.firstOrNull { it.modelCode == p.code }?.let { std ->
+            tailorCostText = std.sewingWage.toString()
+          }
           showProductPicker = false
         },
         itemLabel = { it.name },
