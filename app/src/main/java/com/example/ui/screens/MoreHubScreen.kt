@@ -1289,9 +1289,7 @@ fun MoreHubScreen(
                   }
                 }
 
-                IconButton(onClick = { viewModel.openQuickAction(QuickActionType.SETTINGS_EDIT) }) {
-                  Icon(Icons.Default.Edit, contentDescription = "ویرایش", tint = AccentIndigo)
-                }
+                ManagementEditButton(onClick = { viewModel.openQuickAction(QuickActionType.SETTINGS_EDIT) })
               }
 
               Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -1725,9 +1723,7 @@ fun MoreHubScreen(
                     Text("ماده: ${bom.materialName}", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = customColors.textPrimary)
                     Text("مصرف استاندارد: ${bom.standardQuantity} ${bom.unit} × ${CurrencyHelper.formatNumber(bom.unitRate)} = ${CurrencyHelper.formatNumber(bom.totalLineCost)} تومان", style = MaterialTheme.typography.labelSmall, color = AccentCyan)
                   }
-                  IconButton(onClick = { viewModel.deleteBOM(bom.id, bom.productId) }) {
-                    Icon(Icons.Default.DeleteForever, contentDescription = "حذف", tint = StatusDanger)
-                  }
+                  ManagementDeleteButton(onClick = { viewModel.deleteBOM(bom.id, bom.productId) })
                 }
               }
             }
@@ -1767,9 +1763,7 @@ fun MoreHubScreen(
                     Text(cat.name, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = customColors.textPrimary)
                     Text("کد: ${cat.code}", style = MaterialTheme.typography.labelSmall, color = customColors.textMuted)
                   }
-                  IconButton(onClick = { viewModel.deleteCategory(cat.id) }) {
-                    Icon(Icons.Default.DeleteForever, contentDescription = "حذف", tint = StatusDanger)
-                  }
+                  ManagementDeleteButton(onClick = { viewModel.deleteCategory(cat.id) })
                 }
               }
             }
@@ -1794,9 +1788,7 @@ fun MoreHubScreen(
                       Row(modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
                         Text(c.name, style = MaterialTheme.typography.labelSmall)
                         Spacer(Modifier.size(6.dp))
-                        IconButton(onClick = { viewModel.deleteColor(c.id) }, modifier = Modifier.size(20.dp)) {
-                          Icon(Icons.Default.DeleteForever, contentDescription = null, tint = StatusDanger, modifier = Modifier.size(14.dp))
-                        }
+                        ManagementDeleteButton(onClick = { viewModel.deleteColor(c.id) })
                       }
                     }
                   }
@@ -1819,9 +1811,7 @@ fun MoreHubScreen(
                       Row(modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
                         Text(s.name, style = MaterialTheme.typography.labelSmall)
                         Spacer(Modifier.size(6.dp))
-                        IconButton(onClick = { viewModel.deleteSize(s.id) }, modifier = Modifier.size(20.dp)) {
-                          Icon(Icons.Default.DeleteForever, contentDescription = null, tint = StatusDanger, modifier = Modifier.size(14.dp))
-                        }
+                        ManagementDeleteButton(onClick = { viewModel.deleteSize(s.id) })
                       }
                     }
                   }
@@ -2042,9 +2032,7 @@ fun OrderTimelineCard(
         }
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
           StatusChip(status = order.deliveryStatus)
-          IconButton(onClick = onEdit, modifier = Modifier.size(28.dp)) {
-            Icon(Icons.Default.Edit, contentDescription = "ویرایش", tint = customColors.textMuted, modifier = Modifier.size(16.dp))
-          }
+          ManagementEditButton(onClick = onEdit, modifier = Modifier.size(28.dp)) {)
         }
       }
 
@@ -2395,9 +2383,7 @@ fun CustomerProfileCard(
         }
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
           StatusChip(status = customer.tier)
-          IconButton(onClick = onEdit, modifier = Modifier.size(28.dp)) {
-            Icon(Icons.Default.Edit, contentDescription = "ویرایش", tint = customColors.textMuted, modifier = Modifier.size(16.dp))
-          }
+          ManagementEditButton(onClick = onEdit, modifier = Modifier.size(28.dp)) {)
         }
       }
 
