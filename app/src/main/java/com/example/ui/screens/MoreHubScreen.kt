@@ -688,6 +688,12 @@ fun MoreHubScreen(
     )
   }
 
+  // Phase 11.x fix: READY_GOODS has its own LazyColumn; do not nest it.
+  if (selectedSubSection == MoreSubSection.READY_GOODS) {
+    ReadyGoodsScreen(viewModel = viewModel, modifier = modifier)
+    return
+  }
+
   LazyColumn(
     modifier = modifier
       .fillMaxSize()
@@ -798,11 +804,7 @@ fun MoreHubScreen(
         }
       }
 
-      MoreSubSection.READY_GOODS -> {
-        item {
-          ReadyGoodsScreen(viewModel = viewModel)
-        }
-      }
+      MoreSubSection.READY_GOODS -> {}  // handled above the LazyColumn (avoids nested-LazyColumn crash)
 
       MoreSubSection.CUTTING -> {
         item {
