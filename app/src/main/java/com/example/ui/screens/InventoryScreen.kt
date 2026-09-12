@@ -297,8 +297,8 @@ fun InventoryScreen(
                     else Color.Transparent
                   )
                   .border(
-                    1.dp,
-                    if (isSelected) accent.copy(alpha = 0.55f) else Color.Transparent,
+                    2.dp,
+                    if (isSelected) accent else Color.Transparent,
                     RoundedCornerShape(10.dp)
                   )
                   .clickable { selectedCategory = category }
