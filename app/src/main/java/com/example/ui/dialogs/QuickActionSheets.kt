@@ -4074,6 +4074,8 @@ fun QuickRollConsumeForm(
   var tailorCostText by remember { mutableStateOf("85000") }
   var profitPercentText by remember { mutableStateOf("35") }
   var baseMaterialsText by remember { mutableStateOf("15000") }
+  var otherDirectCostText by remember { mutableStateOf("0") }
+  var selectedStatus by remember { mutableStateOf("برش خورده") }
 
   val productions by viewModel.productions.collectAsStateWithLifecycle()
   val relatedProductions = remember(productions, selectedRoll) {
@@ -4390,6 +4392,13 @@ fun QuickRollConsumeForm(
           onValueChange = { baseMaterialsText = it }
         )
 
+        ExecutiveTextField(
+          label = "هزینه‌های اضافه (سایر)",
+          value = otherDirectCostText,
+          keyboardType = KeyboardType.Number,
+          onValueChange = { otherDirectCostText = it }
+        )
+
         // پیش‌نمایش محاسبه
         val fabricCostPerUnit = if (garmentCount > 0) ((metersUsed * buyPriceMeter) / garmentCount).toLong() else 0L
         val tailorVal = tailorCostText.toLongOrNull() ?: 0L
@@ -4509,6 +4518,36 @@ fun QuickRollConsumeForm(
       }
     }
 
+    // Status Selector (Phase 15 Patch 3)
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+      Text("وضعیت کار پس از ثبت:", style = MaterialTheme.typography.labelSmall, color = customColors.textSecondary)
+      Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
+      ) {
+        listOf("برش خورده", "در حال دوخت", "آماده ارسال").forEach { st ->
+          val sel = selectedStatus == st
+          Box(
+            modifier = Modifier
+              .weight(1f)
+              .clip(RoundedCornerShape(8.dp))
+              .background(if (sel) AccentIndigo else customColors.cardElevated)
+              .border(1.dp, if (sel) AccentIndigo else customColors.border, RoundedCornerShape(8.dp))
+              .clickable { selectedStatus = st }
+              .padding(vertical = 10.dp),
+            contentAlignment = Alignment.Center
+          ) {
+            Text(
+              st,
+              fontSize = 11.sp,
+              fontWeight = if (sel) FontWeight.Bold else FontWeight.Normal,
+              color = if (sel) Color.White else customColors.textPrimary
+            )
+          }
+        }
+      }
+    }
+
     // View History Shortcut Button
     selectedRoll?.let { roll ->
       Button(
@@ -4535,7 +4574,11 @@ fun QuickRollConsumeForm(
             note = note,
             garmentCount = garmentCount,
             metersPerGarment = metersPerGarment,
-            createProductionOrder = true
+            createProductionOrder = true,
+            tailorCostPerItem = tailorCostText.toLongOrNull() ?: 0L,
+            accessoriesCostPerItem = baseMaterialsText.toLongOrNull() ?: 0L,
+            otherDirectCost = otherDirectCostText.toLongOrNull() ?: 0L,
+            initialStatus = selectedStatus
           )
         }
       },

@@ -751,7 +751,11 @@ class ManufacturingRepository(private val database: AppDatabase) {
     note: String = "",
     garmentCount: Int = 0,
     metersPerGarment: Double = 0.0,
-    createProductionOrder: Boolean = true
+    createProductionOrder: Boolean = true,
+    tailorCostPerItem: Long = 0L,
+    accessoriesCostPerItem: Long = 0L,
+    otherDirectCost: Long = 0L,
+    initialStatus: String = "در حال دوخت"
   ): Pair<Boolean, String> = database.withTransaction {
     val roll = database.fabricRollDao().getRollById(rollId)
       ?: return@withTransaction Pair(false, "طاقه مورد نظر با شناسه $rollId یافت نشد")
@@ -807,10 +811,10 @@ class ManufacturingRepository(private val database: AppDatabase) {
         fabricRollsUsed = 1,
         fabricMetersUsed = metersUsed,
         totalWeightKg = weightKgUsed,
-        sewingWagePerItem = 0L,
+        sewingWagePerItem = tailorCostPerItem,
         fabricPricePerMeter = roll.buyPricePerMeter,
-        accessoriesCostPerItem = 0L,
-        status = "در حال دوخت",
+        accessoriesCostPerItem = accessoriesCostPerItem,
+        status = initialStatus,
         date = com.example.util.PersianDateHelper.getTodayPersianDate(),
         rollId = roll.id,
         rollCode = roll.rollCode,

@@ -1453,7 +1453,11 @@ class ManufacturingViewModel(
     note: String = "",
     garmentCount: Int = 0,
     metersPerGarment: Double = 0.0,
-    createProductionOrder: Boolean = true
+    createProductionOrder: Boolean = true,
+    tailorCostPerItem: Long = 0L,
+    accessoriesCostPerItem: Long = 0L,
+    otherDirectCost: Long = 0L,
+    initialStatus: String = "در حال دوخت"
   ) {
     viewModelScope.launch {
       try {
@@ -1467,7 +1471,11 @@ class ManufacturingViewModel(
           note = note,
           garmentCount = garmentCount,
           metersPerGarment = metersPerGarment,
-          createProductionOrder = createProductionOrder
+          createProductionOrder = createProductionOrder,
+          tailorCostPerItem = tailorCostPerItem,
+          accessoriesCostPerItem = accessoriesCostPerItem,
+          otherDirectCost = otherDirectCost,
+          initialStatus = initialStatus
         )
         if (success) {
           closeQuickAction()
