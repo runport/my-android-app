@@ -56,6 +56,9 @@ import com.example.ui.theme.LocalCustomColors
 import com.example.ui.theme.StatusDanger
 import com.example.ui.theme.StatusSuccess
 import com.example.viewmodel.ManufacturingViewModel
+import com.example.ui.components.ManagementAddButton
+import com.example.ui.components.ManagementEditButton
+import com.example.ui.components.ManagementDeleteButton
 
 // ===========================================
 // مدیریت شرکت‌های باربری (CRUD کامل)
@@ -148,15 +151,10 @@ fun ShippingCompanyManagerDialog(
         },
         text = {
             Column(modifier = Modifier.heightIn(max = 420.dp)) {
-                Button(
-                    onClick = { editingCompany = null; showEditor = true },
-                    modifier = Modifier.fillMaxWidth().height(40.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = AccentIndigo)
-                ) {
-                    Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
-                    Spacer(Modifier.size(4.dp))
-                    Text("افزودن باربری جدید")
-                }
+                ManagementAddButton(
+                  text = "افزودن باربری جدید",
+                  onClick = { editingCompany = null; showEditor = true }
+                )
                 Spacer(Modifier.height(10.dp))
                 if (companies.isEmpty()) {
                     Box(
@@ -369,12 +367,8 @@ private fun FabricCategoryList(
                                 }
                             }
                             Row {
-                                IconButton(onClick = { editing = cat; showEditor = true }, modifier = Modifier.size(26.dp)) {
-                                    Icon(Icons.Default.Edit, contentDescription = null, tint = AccentCyan, modifier = Modifier.size(14.dp))
-                                }
-                                IconButton(onClick = { deleteTarget = cat }, modifier = Modifier.size(26.dp)) {
-                                    Icon(Icons.Default.Delete, contentDescription = null, tint = StatusDanger, modifier = Modifier.size(14.dp))
-                                }
+                                ManagementEditButton(onClick = { editing = cat; showEditor = true }, modifier = Modifier.size(26.dp))
+                                ManagementDeleteButton(onClick = { deleteTarget = cat }, modifier = Modifier.size(26.dp))
                             }
                         }
                     }
@@ -470,9 +464,7 @@ private fun ProductCategoryList(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(cat.name, color = customColors.textPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-                            IconButton(onClick = { deleteTarget = cat }, modifier = Modifier.size(26.dp)) {
-                                Icon(Icons.Default.Delete, contentDescription = null, tint = StatusDanger, modifier = Modifier.size(14.dp))
-                            }
+                            ManagementDeleteButton(onClick = { deleteTarget = cat }, modifier = Modifier.size(26.dp))
                         }
                     }
                 }
