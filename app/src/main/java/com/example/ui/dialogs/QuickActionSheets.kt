@@ -4417,6 +4417,9 @@ fun QuickRollConsumeForm(
           standards.firstOrNull { it.modelCode == p.code }?.let { std ->
             tailorCostText = std.sewingWage.toString()
           }
+          viewModel.loadBomCostPerItem(p.id) { bomCost ->
+            if (bomCost > 0L) baseMaterialsText = bomCost.toString()
+          }
           showProductPicker = false
         },
         itemLabel = { it.name },

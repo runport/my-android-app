@@ -2551,6 +2551,17 @@ class ManufacturingViewModel(
     }
   }
 
+  fun loadBomCostPerItem(productId: Long, onResult: (Long) -> Unit) {
+    viewModelScope.launch {
+      try {
+        val cost = repository.getBomCostPerItem(productId)
+        onResult(cost)
+      } catch (_: Exception) {
+        onResult(0L)
+      }
+    }
+  }
+
   fun recordFabricPurchaseAndPropagate(
     rollId: Long,
     newPricePerMeter: Long,

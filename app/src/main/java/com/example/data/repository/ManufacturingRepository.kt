@@ -3969,6 +3969,18 @@ class ManufacturingRepository(private val database: AppDatabase) {
   // ==========================================
 
   /**
+   * Phase 15 Patch 3E: sum of BOM line costs for a product.
+   * Returns 0L if the product has no BOM entries.
+   */
+  suspend fun getBomCostPerItem(productId: Long): Long {
+    if (productId <= 0L) return 0L
+    return try {
+      database.productBOMDao().getBOMListForProduct(productId)
+        .sumOf { it.totalLineCost }
+    } catch (_: Exception) { 0L }
+  }
+
+  /**
    * Phase 15 Patch 2: register a new fabric roll purchase and propagate its price
    * to all rolls of the same fabricCategoryId.
    *
