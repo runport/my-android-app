@@ -3965,10 +3965,6 @@ class ManufacturingRepository(private val database: AppDatabase) {
   // ==========================================
 
   /**
-   * به‌روزرسانی قیمت روز یک طاقه بدون ثبت خرید جدید.
-   * موجودی فیزیکی دست نمی‌خورد؛ فقط قیمت روز و بهای محاسباتی.
-   */
-  /**
    * Phase 15 Patch 2: register a new fabric roll purchase and propagate its price
    * to all rolls of the same fabricCategoryId.
    *
@@ -4078,6 +4074,10 @@ class ManufacturingRepository(private val database: AppDatabase) {
     Pair(true, msg)
   }
 
+  /**
+   * به‌روزرسانی قیمت روز یک طاقه بدون ثبت خرید جدید.
+   * موجودی فیزیکی دست نمی‌خورد؛ فقط قیمت روز و بهای محاسباتی.
+   */
   suspend fun updateFabricRollCurrentPrice(
     rollId: Long, newPricePerMeter: Long, newPricePerKg: Long = 0L,
     reason: String = "تغییر قیمت بازار", operator: String = "مدیر کارگاه"
