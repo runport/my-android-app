@@ -2721,5 +2721,19 @@ class ManufacturingViewModel(
 
   fun openReserveOrderDialog() { _showReserveOrderDialog.value = true }
   fun closeReserveOrderDialog() { _showReserveOrderDialog.value = false }
+
+  // ==========================================
+  // CLEAR ALL DATA (بدون دمو)
+  // ==========================================
+  fun clearAllDataWithoutDemo() {
+    viewModelScope.launch {
+      try {
+        val (success, msg) = repository.clearAllDataKeepingStructure()
+        _notification.value = UiNotification(msg, !success)
+      } catch (e: Exception) {
+        _notification.value = UiNotification("خطا: ${e.localizedMessage}", true)
+      }
+    }
+  }
 }
 

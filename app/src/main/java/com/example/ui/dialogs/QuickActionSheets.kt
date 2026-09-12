@@ -2097,14 +2097,8 @@ fun QuickSettingsForm(
     // 4. Fixed Costs (مبالغ ثابت باربری، سود و سربار)
     Text("مبالغ ثابت باربری و سربار", style = MaterialTheme.typography.labelMedium, color = customColors.textSecondary, fontWeight = FontWeight.Bold)
 
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-      Box(modifier = Modifier.weight(1f)) {
-        ExecutiveTextField(label = "باربری ثابت سفارش (تومان)", value = shipOrderText, keyboardType = KeyboardType.Number, onValueChange = { shipOrderText = it })
-      }
-      Box(modifier = Modifier.weight(1f)) {
-        ExecutiveTextField(label = "باربری هر طاقه (تومان)", value = shipRollText, keyboardType = KeyboardType.Number, onValueChange = { shipRollText = it })
-      }
-    }
+    // 📌 هزینه باربری به صورت خودکار از بارنامه‌های ثبت‌شده محاسبه می‌شود.
+    // فیلدهای ثابت قبلی حذف شده‌اند (مقادیر پیش‌فرض در fallback استفاده می‌شوند).
 
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
       Box(modifier = Modifier.weight(1f)) {
@@ -4081,6 +4075,9 @@ fun QuickRollConsumeForm(
   var consumptionAmountText by remember { mutableStateOf("25.0") }
   var garmentCountText by remember { mutableStateOf("20") }
   var note by remember { mutableStateOf("تولید و برش پارت اول") }
+  var tailorCostText by remember { mutableStateOf("85000") }
+  var profitPercentText by remember { mutableStateOf("35") }
+  var baseMaterialsText by remember { mutableStateOf("15000") }
 
   val productions by viewModel.productions.collectAsState()
   val relatedProductions = remember(productions, selectedRoll) {
@@ -4351,6 +4348,81 @@ fun QuickRollConsumeForm(
       value = note,
       onValueChange = { note = it }
     )
+
+    // ============================================
+    // هزینه‌های تولید و قیمت‌گذاری (فاز ۱۰.۳)
+    // ============================================
+    Box(
+      modifier = Modifier
+        .fillMaxWidth()
+        .clip(RoundedCornerShape(12.dp))
+        .background(customColors.cardElevated)
+        .border(1.dp, AccentIndigo.copy(alpha = 0.4f), RoundedCornerShape(12.dp))
+        .padding(12.dp)
+    ) {
+      Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+          "💰 هزینه‌های تولید و قیمت‌گذاری محصول",
+          style = MaterialTheme.typography.labelMedium,
+          color = AccentIndigo,
+          fontWeight = FontWeight.Bold
+        )
+
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+          Box(modifier = Modifier.weight(1f)) {
+            ExecutiveTextField(
+              label = "هزینه خیاط هر کار",
+              value = tailorCostText,
+              keyboardType = KeyboardType.Number,
+              onValueChange = { tailorCostText = it }
+            )
+          }
+          Box(modifier = Modifier.weight(1f)) {
+            ExecutiveTextField(
+              label = "سود ثابت هدف (٪)",
+              value = profitPercentText,
+              keyboardType = KeyboardType.Decimal,
+              onValueChange = { profitPercentText = it }
+            )
+          }
+        }
+
+        ExecutiveTextField(
+          label = "هزینه ملزومات پایه هر کار (نخ، دوک، برق، کرایه)",
+          value = baseMaterialsText,
+          keyboardType = KeyboardType.Number,
+          onValueChange = { baseMaterialsText = it }
+        )
+
+        // پیش‌نمایش محاسبه
+        val fabricCostPerUnit = if (garmentCount > 0) ((metersUsed * buyPriceMeter) / garmentCount).toLong() else 0L
+        val tailorVal = tailorCostText.toLongOrNull() ?: 0L
+        val baseVal = baseMaterialsText.toLongOrNull() ?: 0L
+        val profitPct = profitPercentText.toDoubleOrNull() ?: 0.0
+        val subtotal = fabricCostPerUnit + tailorVal + baseVal
+        val profitVal = (subtotal * profitPct / 100.0).toLong()
+        val finalUnitPrice = subtotal + profitVal
+
+        HorizontalDivider(color = customColors.border)
+
+        Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween) {
+          Text("هزینه پارچه هر کار:", fontSize = 11.sp, color = customColors.textMuted)
+          Text(CurrencyHelper.formatToman(fabricCostPerUnit), fontSize = 11.sp, color = customColors.textPrimary)
+        }
+        Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween) {
+          Text("جمع هزینه (بدون سود):", fontSize = 11.sp, color = customColors.textMuted)
+          Text(CurrencyHelper.formatToman(subtotal), fontSize = 11.sp, color = customColors.textPrimary, fontWeight = FontWeight.Bold)
+        }
+        Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween) {
+          Text("سود (${profitPct.toInt()}٪):", fontSize = 11.sp, color = customColors.textMuted)
+          Text(CurrencyHelper.formatToman(profitVal), fontSize = 11.sp, color = StatusSuccess)
+        }
+        Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween) {
+          Text("قیمت فروش پیشنهادی هر کار:", fontSize = 12.sp, color = customColors.textPrimary, fontWeight = FontWeight.Bold)
+          Text(CurrencyHelper.formatToman(finalUnitPrice), fontSize = 13.sp, color = AccentCyan, fontWeight = FontWeight.Bold)
+        }
+      }
+    }
 
     // Detailed Consumption & Untouched Roll Metrics Card
     Box(

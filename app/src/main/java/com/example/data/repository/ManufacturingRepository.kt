@@ -4220,6 +4220,17 @@ class ManufacturingRepository(private val database: AppDatabase) {
           )
         }
       }
+      // تخصیص به ملزومات در صورت وجود (فاز ۱۰.۴)
+      else if (item.itemType == "MATERIAL") {
+        try {
+          val mat = database.materialDao().getById(item.itemId)
+          if (mat != null) {
+            database.materialDao().update(
+              mat.copy(allocatedShippingCost = mat.allocatedShippingCost + alloc)
+            )
+          }
+        } catch (_: Exception) {}
+      }
     }
 
     // ۳. آدیت لاگ
@@ -4496,6 +4507,23 @@ class ManufacturingRepository(private val database: AppDatabase) {
     } catch (_: Exception) {}
 
     Pair(true, "سفارش ${order.orderNumber} لغو شد و ${order.quantity} عدد به موجودی آزاد برگشت")
+  }
+
+  /**
+   * پاک کردن تمام داده‌ها بدون بارگذاری دمو
+   * فقط تنظیمات پیش‌فرض FactorySettings بازنشانی می‌شود
+   */
+  suspend fun clearAllDataKeepingStructure(): Pair<Boolean, String> = database.withTransaction {
+    try {
+      database.clearAllTables()
+      // تنظیمات پیش‌فرض
+      database.factorySettingsDao().insertOrUpdate(
+        com.example.data.model.FactorySettingsEntity()
+      )
+      Pair(true, "تمام داده‌ها پاک شد. سیستم آماده ورود اطلاعات جدید است.")
+    } catch (e: Exception) {
+      Pair(false, "خطا در پاکسازی: ${e.localizedMessage}")
+    }
   }
 }
 

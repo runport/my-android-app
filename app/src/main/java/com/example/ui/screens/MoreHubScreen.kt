@@ -147,6 +147,7 @@ fun MoreHubScreen(
   val context = LocalContext.current
 
   var showResetConfirmDialog by remember { mutableStateOf(false) }
+  var showClearAllConfirmDialog by remember { mutableStateOf(false) }
   var showRestoreBackupDialog by remember { mutableStateOf(false) }
   var showQuickCalcDialog by remember { mutableStateOf(false) }
   var showAddSupplierDialog by remember { mutableStateOf(false) }
@@ -497,6 +498,16 @@ fun MoreHubScreen(
           Text("انصراف", color = customColors.textMuted)
         }
       }
+    )
+  }
+
+  if (showClearAllConfirmDialog) {
+    DeleteAllDataConfirmDialog(
+      onConfirm = {
+        viewModel.clearAllDataWithoutDemo()
+        showClearAllConfirmDialog = false
+      },
+      onDismiss = { showClearAllConfirmDialog = false }
     )
   }
 
@@ -1393,14 +1404,25 @@ fun MoreHubScreen(
 
                 // C. Permanent reset to demo data
                 Button(
+                  onClick = { showClearAllConfirmDialog = true },
+                  modifier = Modifier.fillMaxWidth().height(42.dp),
+                  shape = RoundedCornerShape(8.dp),
+                  colors = ButtonDefaults.buttonColors(containerColor = StatusDanger)
+                ) {
+                  Icon(Icons.Default.DeleteForever, contentDescription = null, modifier = Modifier.size(16.dp))
+                  Spacer(Modifier.size(8.dp))
+                  Text("پاک کردن کامل داده‌ها (شروع از صفر، بدون دمو)", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                }
+
+                OutlinedButton(
                   onClick = { showResetConfirmDialog = true },
                   modifier = Modifier.fillMaxWidth().height(42.dp),
                   shape = RoundedCornerShape(8.dp),
-                  colors = ButtonDefaults.buttonColors(containerColor = StatusDanger.copy(alpha = 0.85f))
+                  colors = ButtonDefaults.outlinedButtonColors(contentColor = StatusWarning)
                 ) {
                   Icon(Icons.Default.RestartAlt, contentDescription = null, modifier = Modifier.size(16.dp))
                   Spacer(Modifier.size(8.dp))
-                  Text("پاک کردن دائم داده‌ها و بازنشانی داده‌های نمونه (دمو)", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                  Text("بارگذاری داده‌های نمونه (دمو)", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
                 }
               }
             }
