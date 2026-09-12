@@ -249,40 +249,89 @@ fun InventoryScreen(
       }
     }
 
-    // 3. Category Filter Selector
+    // 3. Category Filter Selector — 2 rows of 3+2, aligned, with icons
     item {
-      Row(
+      Column(
         modifier = Modifier
           .fillMaxWidth()
           .clip(RoundedCornerShape(12.dp))
           .background(customColors.secondaryBg)
           .border(1.dp, customColors.border, RoundedCornerShape(12.dp))
-          .padding(4.dp),
-        horizontalArrangement = Arrangement.spacedBy(4.dp)
+          .padding(6.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp)
       ) {
-        InventoryCategory.values().forEach { category ->
-          val isSelected = category == selectedCategory
-          Box(
-            modifier = Modifier
-              .weight(1f)
-              .clip(RoundedCornerShape(8.dp))
-              .background(if (isSelected) customColors.cardElevated else Color.Transparent)
-              .clickable { selectedCategory = category }
-              .padding(vertical = 10.dp),
-            contentAlignment = Alignment.Center
+        val allCats = InventoryCategory.values()
+        val rows = listOf(allCats.take(3), allCats.drop(3))
+        rows.forEach { rowItems ->
+          Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
           ) {
-            Text(
-              text = category.title,
-              style = MaterialTheme.typography.labelSmall,
-              color = if (isSelected) customColors.textPrimary else customColors.textMuted,
-              fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-              fontSize = 11.sp
-            )
+            rowItems.forEach { category ->
+              val isSelected = category == selectedCategory
+              val icon = when (category) {
+                InventoryCategory.FINISHED_GOODS -> Icons.Default.CheckCircle
+                InventoryCategory.FABRIC_ROLLS -> Icons.Default.Scale
+                InventoryCategory.RAW_FABRICS -> Icons.Default.Category
+                InventoryCategory.ACCESSORIES -> Icons.Default.Build
+                InventoryCategory.SHIPPING_RECORDS -> Icons.Default.LocalShipping
+              }
+              val accent = when (category) {
+                InventoryCategory.FINISHED_GOODS -> StatusSuccess
+                InventoryCategory.FABRIC_ROLLS -> AccentCyan
+                InventoryCategory.RAW_FABRICS -> AccentIndigo
+                InventoryCategory.ACCESSORIES -> com.example.ui.theme.AccentAmber
+                InventoryCategory.SHIPPING_RECORDS -> AccentBlue
+              }
+              Box(
+                modifier = Modifier
+                  .weight(1f)
+                  .height(58.dp)
+                  .clip(RoundedCornerShape(10.dp))
+                  .background(
+                    if (isSelected) accent.copy(alpha = 0.18f)
+                    else Color.Transparent
+                  )
+                  .border(
+                    1.dp,
+                    if (isSelected) accent.copy(alpha = 0.55f) else Color.Transparent,
+                    RoundedCornerShape(10.dp)
+                  )
+                  .clickable { selectedCategory = category }
+                  .padding(horizontal = 4.dp, vertical = 6.dp),
+                contentAlignment = Alignment.Center
+              ) {
+                Column(
+                  horizontalAlignment = Alignment.CenterHorizontally,
+                  verticalArrangement = Arrangement.Center
+                ) {
+                  Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = if (isSelected) accent else customColors.textMuted,
+                    modifier = Modifier.size(16.dp)
+                  )
+                  Spacer(Modifier.height(3.dp))
+                  Text(
+                    text = category.title,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = if (isSelected) customColors.textPrimary else customColors.textMuted,
+                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                    fontSize = 10.sp,
+                    maxLines = 2,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    lineHeight = 11.sp
+                  )
+                }
+              }
+            }
+            repeat(3 - rowItems.size) {
+              Spacer(modifier = Modifier.weight(1f))
+            }
           }
         }
       }
     }
-
     // 4. Listing Items Based on Category with Edit Capabilities
     when (selectedCategory) {
       InventoryCategory.FINISHED_GOODS -> {
