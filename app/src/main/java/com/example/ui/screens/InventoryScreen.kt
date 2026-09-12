@@ -71,13 +71,6 @@ import com.example.ui.dialogs.WaybillDetailsDialog
 import com.example.util.UnitFormatter
 import com.example.ui.dialogs.CategoryManagerDialog
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.compose.material.icons.filled.Build
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
-import com.example.ui.components.ManagementAddButton
-import com.example.ui.components.ManagementEditButton
-import com.example.ui.components.ManagementDeleteButton
-import com.example.ui.components.ManagementSaveButton
 
 enum class InventoryCategory(val title: String) {
   FINISHED_GOODS("محصولات آماده"),
@@ -256,87 +249,35 @@ fun InventoryScreen(
       }
     }
 
-    // 3. Category Filter Selector — 2 rows of 3+2, aligned, with icons
+    // 3. Category Filter Selector
     item {
-      Column(
+      Row(
         modifier = Modifier
           .fillMaxWidth()
           .clip(RoundedCornerShape(12.dp))
           .background(customColors.secondaryBg)
           .border(1.dp, customColors.border, RoundedCornerShape(12.dp))
-          .padding(6.dp),
-        verticalArrangement = Arrangement.spacedBy(6.dp)
+          .padding(4.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp)
       ) {
-        val allCats = InventoryCategory.values()
-        val rows = listOf(allCats.take(3), allCats.drop(3))
-        rows.forEach { rowItems ->
-          Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        InventoryCategory.values().forEach { category ->
+          val isSelected = category == selectedCategory
+          Box(
+            modifier = Modifier
+              .weight(1f)
+              .clip(RoundedCornerShape(8.dp))
+              .background(if (isSelected) customColors.cardElevated else Color.Transparent)
+              .clickable { selectedCategory = category }
+              .padding(vertical = 10.dp),
+            contentAlignment = Alignment.Center
           ) {
-            rowItems.forEach { category ->
-              val isSelected = category == selectedCategory
-              val icon = when (category) {
-                InventoryCategory.FINISHED_GOODS -> Icons.Default.CheckCircle
-                InventoryCategory.FABRIC_ROLLS -> Icons.Default.Scale
-                InventoryCategory.RAW_FABRICS -> Icons.Default.Category
-                InventoryCategory.ACCESSORIES -> Icons.Default.Build
-                InventoryCategory.SHIPPING_RECORDS -> Icons.Default.LocalShipping
-              }
-              val accent = when (category) {
-                InventoryCategory.FINISHED_GOODS -> StatusSuccess
-                InventoryCategory.FABRIC_ROLLS -> AccentCyan
-                InventoryCategory.RAW_FABRICS -> AccentIndigo
-                InventoryCategory.ACCESSORIES -> com.example.ui.theme.AccentAmber
-                InventoryCategory.SHIPPING_RECORDS -> AccentBlue
-              }
-              Box(
-                modifier = Modifier
-                  .weight(1f)
-                  .height(58.dp)
-                  .clip(RoundedCornerShape(10.dp))
-                  .background(
-                    if (isSelected) accent.copy(alpha = 0.18f)
-                    else Color.Transparent
-                  )
-                  .border(
-                    1.dp,
-                    if (isSelected) accent.copy(alpha = 0.55f) else Color.Transparent,
-                    RoundedCornerShape(10.dp)
-                  )
-                  .clickable { selectedCategory = category }
-                  .padding(horizontal = 4.dp, vertical = 6.dp),
-                contentAlignment = Alignment.Center
-              ) {
-                Column(
-                  horizontalAlignment = Alignment.CenterHorizontally,
-                  verticalArrangement = Arrangement.Center
-                ) {
-                  Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = if (isSelected) accent else customColors.textMuted,
-                    modifier = Modifier.size(16.dp)
-                  )
-                  Spacer(Modifier.height(3.dp))
-                  Text(
-                    text = category.title,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = if (isSelected) customColors.textPrimary else customColors.textMuted,
-                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                    fontSize = 10.sp,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    textAlign = TextAlign.Center,
-                    lineHeight = 11.sp
-                  )
-                }
-              }
-            }
-            // pad the last row if fewer items
-            repeat(3 - rowItems.size) {
-              Spacer(modifier = Modifier.weight(1f))
-            }
+            Text(
+              text = category.title,
+              style = MaterialTheme.typography.labelSmall,
+              color = if (isSelected) customColors.textPrimary else customColors.textMuted,
+              fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+              fontSize = 11.sp
+            )
           }
         }
       }
@@ -477,10 +418,17 @@ fun InventoryScreen(
       }
       InventoryCategory.RAW_FABRICS -> {
         item {
-          ManagementAddButton(
-              text = "مدیریت دسته‌بندی پارچه",
-              onClick = { showCategoryManager = true }
-            )
+          Button(
+            onClick = { showCategoryManager = true },
+            modifier = Modifier.fillMaxWidth().height(44.dp),
+            shape = RoundedCornerShape(8.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = AccentIndigo)
+          ) {
+            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+            Spacer(Modifier.size(6.dp))
+            Text("مدیریت دسته‌بندی پارچه (افزودن / ویرایش / حذف)", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+          }
+        }
         items(fabrics) { fabric ->
           FabricInventoryCard(
             fabric = fabric,
@@ -491,12 +439,17 @@ fun InventoryScreen(
       InventoryCategory.ACCESSORIES -> {
         val accessories = inventoryItems.filter { it.category == "ملزومات" }
         item {
-          ManagementAddButton(
-              text = "مدیریت دسته‌بندی ملزومات",
-              onClick = { showCategoryManager = true },
-              containerColor = com.example.ui.theme.AccentAmber,
-              contentColor = Color.Black
-            )
+          Button(
+            onClick = { showCategoryManager = true },
+            modifier = Modifier.fillMaxWidth().height(44.dp),
+            shape = RoundedCornerShape(8.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = com.example.ui.theme.AccentAmber)
+          ) {
+            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp), tint = Color.Black)
+            Spacer(Modifier.size(6.dp))
+            Text("مدیریت دسته‌بندی ملزومات (افزودن / ویرایش / حذف)", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+          }
+        }
         items(accessories) { item ->
           InventoryProductCard(
             item = item,
@@ -639,7 +592,12 @@ fun InventoryProductCard(
           horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
           StatusChip(status = if (item.availableForSale > 50) "موجودی مطلوب" else "موجودی محدود")
-          ManagementEditButton(onClick = onEdit)
+          IconButton(
+            onClick = onEdit,
+            modifier = Modifier.size(28.dp)
+          ) {
+            Icon(Icons.Default.Edit, contentDescription = "ویرایش", tint = customColors.textMuted, modifier = Modifier.size(16.dp))
+          }
         }
       }
 
@@ -774,7 +732,12 @@ fun FabricInventoryCard(
             StatusChip(status = "موجودی کافی")
           }
 
-          ManagementEditButton(onClick = onEdit)
+          IconButton(
+            onClick = onEdit,
+            modifier = Modifier.size(28.dp)
+          ) {
+            Icon(Icons.Default.Edit, contentDescription = "ویرایش", tint = customColors.textMuted, modifier = Modifier.size(16.dp))
+          }
         }
       }
 
@@ -914,7 +877,9 @@ fun FabricRollInventoryCard(
           IconButton(onClick = onUpdatePrice) {
             Icon(Icons.Default.Refresh, contentDescription = "به‌روزرسانی قیمت روز", tint = StatusSuccess)
           }
-          ManagementEditButton(onClick = onEdit)
+          IconButton(onClick = onEdit) {
+            Icon(Icons.Default.Edit, contentDescription = "ویرایش", tint = AccentIndigo)
+          }
           IconButton(onClick = onHistory) {
             Icon(Icons.Default.History, contentDescription = "سوابق مصرف", tint = AccentCyan)
           }
