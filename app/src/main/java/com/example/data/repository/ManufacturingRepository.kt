@@ -4220,17 +4220,6 @@ class ManufacturingRepository(private val database: AppDatabase) {
           )
         }
       }
-      // تخصیص به ملزومات در صورت وجود (فاز ۱۰.۴)
-      else if (item.itemType == "MATERIAL") {
-        try {
-          val mat = database.materialDao().getById(item.itemId)
-          if (mat != null) {
-            database.materialDao().update(
-              mat.copy(allocatedShippingCost = mat.allocatedShippingCost + alloc)
-            )
-          }
-        } catch (_: Exception) {}
-      }
     }
 
     // ۳. آدیت لاگ
