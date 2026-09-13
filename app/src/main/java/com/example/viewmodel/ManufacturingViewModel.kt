@@ -779,6 +779,37 @@ class ManufacturingViewModel(
     }
   }
 
+  /**
+   * Phase 16.3a — multi-line sale entry point (used by QuickSaleForm 16.3b).
+   */
+  fun submitMultiLineSale(
+    customerName: String,
+    customerPhone: String,
+    lines: List<SaleLineInput>,
+    totalDiscount: Long,
+    totalPaid: Long
+  ) {
+    viewModelScope.launch {
+      try {
+        val (success, msg) = repository.insertMultiLineSaleOrder(
+          customerName = customerName,
+          customerPhone = customerPhone,
+          lines = lines,
+          totalDiscount = totalDiscount,
+          totalPaid = totalPaid
+        )
+        if (success) {
+          closeQuickAction()
+          _notification.value = UiNotification(msg)
+        } else {
+          _notification.value = UiNotification(msg, true)
+        }
+      } catch (e: Exception) {
+        _notification.value = UiNotification("خطا در ثبت فاکتور چندقلمی: ${e.localizedMessage}", true)
+      }
+    }
+  }
+
   fun submitProduction(
     modelCode: String,
     modelName: String,

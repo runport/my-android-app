@@ -20,6 +20,7 @@ import com.example.data.model.ProductionConsumableEntity
 import com.example.data.model.ProductionConsumableInputItem
 import com.example.data.model.ProductionEntity
 import com.example.data.model.RollUsageEntity
+import com.example.data.model.SaleLineInput
 import com.example.data.model.SaleOrderEntity
 import com.example.data.model.SaleOrderStatus
 import com.example.data.model.ShippingAllocationMethod
@@ -314,6 +315,135 @@ class ManufacturingRepository(private val database: AppDatabase) {
         )
       }
     }
+  }
+
+  /**
+   * Phase 16.3a — multi-line sale: one orderNumber, N SaleOrderEntity rows,
+   * per-line inventory deduction + ledger, discount/paid distributed
+   * proportionally to each line subtotal (remainder to last line).
+   */
+  suspend fun insertMultiLineSaleOrder(
+    customerName: String,
+    customerPhone: String,
+    lines: List<SaleLineInput>,
+    totalDiscount: Long,
+    totalPaid: Long
+  ): Pair<Boolean, String> = database.withTransaction {
+    if (lines.isEmpty()) return@withTransaction Pair(false, "هیچ قلمی برای ثبت وجود ندارد")
+    val validLines = lines.filter { it.quantity > 0 && it.unitPrice > 0L }
+    if (validLines.isEmpty()) return@withTransaction Pair(false, "اقلام نامعتبر هستند")
+
+    val orderNumber = "#${(2052..2999).random()}"
+    val currentDate = "امروز"
+
+    val lineSubtotals = validLines.map { it.quantity.toLong() * it.unitPrice }
+    val subtotal = lineSubtotals.sum()
+    val netTotal = (subtotal - totalDiscount).coerceAtLeast(0L)
+
+    var allocatedDiscount = 0L
+    var allocatedPaid = 0L
+
+    validLines.forEachIndexed { idx, line ->
+      val lineSubtotal = lineSubtotals[idx]
+      val isLast = idx == validLines.lastIndex
+
+      val lineDiscount = if (isLast) {
+        (totalDiscount - allocatedDiscount).coerceAtLeast(0L)
+      } else if (subtotal > 0L) {
+        ((totalDiscount.toDouble() * lineSubtotal.toDouble()) / subtotal.toDouble()).toLong()
+      } else 0L
+      allocatedDiscount += lineDiscount
+
+      val linePaid = if (isLast) {
+        (totalPaid - allocatedPaid).coerceAtLeast(0L)
+      } else if (subtotal > 0L) {
+        ((totalPaid.toDouble() * lineSubtotal.toDouble()) / subtotal.toDouble()).toLong()
+      } else 0L
+      allocatedPaid += linePaid
+
+      val lineNet = (lineSubtotal - lineDiscount).coerceAtLeast(0L)
+      val isFullyPaid = lineNet > 0L && linePaid >= lineNet
+
+      val order = SaleOrderEntity(
+        orderNumber = orderNumber,
+        customerName = customerName,
+        customerPhone = customerPhone,
+        modelCode = line.modelCode,
+        modelName = line.modelName,
+        quantity = line.quantity,
+        unitPrice = line.unitPrice,
+        unitCost = line.unitCost,
+        discountAmount = lineDiscount,
+        paidAmount = linePaid,
+        orderDate = currentDate,
+        deliveryStatus = "ثبت شده"
+      )
+      database.saleOrderDao().insertOrder(order)
+
+      val prodCode = "PRD-${line.modelCode.removePrefix("M")}"
+      val inventoryItem = database.inventoryDao().getByCode(prodCode)
+      if (inventoryItem != null) {
+        val wasEnough = inventoryItem.availableForSale >= line.quantity
+        val newAvailable = (inventoryItem.availableForSale - line.quantity).coerceAtLeast(0)
+        val shortageNote = if (wasEnough) "" else " (کسری: ${line.quantity - inventoryItem.availableForSale} عدد)"
+        if (isFullyPaid) {
+          val newReady = (inventoryItem.readyForShipment - line.quantity).coerceAtLeast(0)
+          database.inventoryDao().updateItem(
+            inventoryItem.copy(
+              availableForSale = newAvailable,
+              readyForShipment = newReady,
+              lastUpdated = currentDate
+            )
+          )
+          database.inventoryLedgerDao().insert(
+            InventoryLedgerEntity(
+              timestamp = System.currentTimeMillis(),
+              date = currentDate,
+              itemType = "FINISHED_GOOD",
+              itemId = inventoryItem.id,
+              itemCode = prodCode,
+              itemName = line.modelName,
+              transactionType = "SALE_SHIPMENT",
+              quantityChange = -line.quantity.toDouble(),
+              balanceAfter = newAvailable.toDouble(),
+              unit = "عدد",
+              unitPriceAtTime = line.unitCost,
+              relatedDocumentNumber = orderNumber,
+              notes = "فروش قطعی ${line.quantity} عدد$shortageNote - مشتری: $customerName",
+              operator = "مدیر سیستم"
+            )
+          )
+        } else {
+          database.inventoryDao().updateItem(
+            inventoryItem.copy(
+              availableForSale = newAvailable,
+              reservedQuantity = inventoryItem.reservedQuantity + line.quantity.coerceAtMost(inventoryItem.availableForSale),
+              lastUpdated = currentDate
+            )
+          )
+          database.inventoryLedgerDao().insert(
+            InventoryLedgerEntity(
+              timestamp = System.currentTimeMillis(),
+              date = currentDate,
+              itemType = "FINISHED_GOOD",
+              itemId = inventoryItem.id,
+              itemCode = prodCode,
+              itemName = line.modelName,
+              transactionType = "SALE_RESERVATION",
+              quantityChange = -line.quantity.toDouble(),
+              balanceAfter = newAvailable.toDouble(),
+              unit = "عدد",
+              unitPriceAtTime = line.unitCost,
+              relatedDocumentNumber = orderNumber,
+              notes = "رزرو ${line.quantity} عدد$shortageNote - مشتری: $customerName",
+              operator = "مدیر سیستم"
+            )
+          )
+        }
+      }
+    }
+
+    Pair(true, "فاکتور $orderNumber با ${validLines.size} قلم و مبلغ $netTotal تومان ثبت شد")
   }
 
   suspend fun insertProductionRecord(

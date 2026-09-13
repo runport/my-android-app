@@ -1260,3 +1260,18 @@ enum class UserRole(
 
 
 
+
+
+/**
+ * Phase 16.3a — Input DTO for multi-line sale invoices.
+ * Used by ManufacturingRepository.insertMultiLineSaleOrder.
+ * UI keeps its own draft type (with text fields); this is the
+ * validated, numeric form passed to the data layer.
+ */
+data class SaleLineInput(
+    val modelCode: String,
+    val modelName: String,
+    val quantity: Int,
+    val unitPrice: Long,
+    val unitCost: Long = 0L,
+)
