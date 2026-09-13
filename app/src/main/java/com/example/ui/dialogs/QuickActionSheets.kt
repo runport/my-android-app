@@ -1093,6 +1093,7 @@ fun QuickReadyGoodsForm(
   val customColors = LocalCustomColors.current
   val existingItems by viewModel.inventory.collectAsStateWithLifecycle()
   val availableRolls by viewModel.availableFabricRolls.collectAsStateWithLifecycle()
+  val factorySettings by viewModel.factorySettings.collectAsStateWithLifecycle()
   val readyGoodsList = remember(existingItems) {
     existingItems.filter { it.category == "محصولات آماده" || it.readyForShipment > 0 || it.availableForSale > 0 }
   }
@@ -1127,7 +1128,15 @@ fun QuickReadyGoodsForm(
         metersUsedText = prod.fabricMetersUsed.toString(),
         sewingWageText = prod.sewingWagePerItem.toString(),
         accessoriesCostText = prod.accessoriesCostPerItem.toString(),
-        salePriceText = prod.estimatedSalePricePerItem.toString(),
+        salePriceText = FinancialCalculationService.calculateFinalUnitPrice(
+          fabricCostPerItem = prod.fabricCostPerItem,
+          fabricShippingShare = prod.fabricShippingShare,
+          accessoriesCostPerItem = prod.accessoriesCostPerItem,
+          accessoriesShippingShare = prod.accessoriesShippingShare,
+          tailorWagePerItem = prod.sewingWagePerItem,
+          overheadCostPerItem = prod.overheadCostPerItem,
+          profitPercent = factorySettings?.targetProfitMarginPercent ?: 35.0
+        ).toString(),
         unitWeightGramsText = prod.weightPerItemGrams.toInt().toString()
       )
     })
