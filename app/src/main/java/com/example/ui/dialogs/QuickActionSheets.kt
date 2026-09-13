@@ -1387,44 +1387,14 @@ fun QuickReadyGoodsForm(
       }
     }
 
-    // 3. MULTI-PRODUCT LIST (چند محصول از یک طاقه + و -)
-    Row(
-      modifier = Modifier.fillMaxWidth(),
-      horizontalArrangement = Arrangement.SpaceBetween,
-      verticalAlignment = Alignment.CenterVertically
-    ) {
-      Text(
-        text = "محصولات تولیدی از این طاقه (${productLines.size} قلم)",
-        style = MaterialTheme.typography.labelLarge,
-        color = customColors.textPrimary,
-        fontWeight = FontWeight.Bold
-      )
-
-      Button(
-        onClick = {
-          productLines.add(
-            ReadyProductLineDraft(
-              name = "محصول جدید ${productLines.size + 1}",
-              code = "PR-${100 + productLines.size + 1}",
-              readyQuantityText = "20",
-              metersUsedText = "15.0",
-              sewingWageText = "85000",
-              accessoriesCostText = "30000",
-              salePriceText = "650000",
-              unitWeightGramsText = "450"
-            )
-          )
-        },
-        shape = RoundedCornerShape(8.dp),
-        colors = ButtonDefaults.buttonColors(containerColor = AccentIndigo),
-        modifier = Modifier.height(34.dp)
-      ) {
-        Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
-          Icon(Icons.Default.Add, contentDescription = "افزودن محصول", modifier = Modifier.size(16.dp))
-          Text("افزودن محصول (+)", fontSize = 11.sp, fontWeight = FontWeight.Bold)
-        }
-      }
-    }
+    // 3. MULTI-PRODUCT LIST (محصولات تولیدی از این طاقه)
+    Text(
+      text = "محصولات تولیدی از این طاقه (${productLines.size} قلم)",
+      style = MaterialTheme.typography.labelLarge,
+      color = customColors.textPrimary,
+      fontWeight = FontWeight.Bold,
+      modifier = Modifier.fillMaxWidth()
+    )
 
     // Product Line Cards
     productLines.forEachIndexed { index, line ->
