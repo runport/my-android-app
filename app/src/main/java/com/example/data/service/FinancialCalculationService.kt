@@ -569,6 +569,43 @@ object FinancialCalculationService {
     return materialCost + consumablesCost + allocatedFreightCost + tailorCost + allocatedFixedCosts + otherCosts
   }
 
+
+  /**
+   * Phase 16.9a — Final unit price = landed cost + profit.
+   *
+   * landedCost = fabricCost + fabricShippingShare
+   *            + accessoriesCost + accessoriesShippingShare
+   *            + tailorWage + overheadPerItem
+   *
+   * profit: percentage of landed cost (default), OR a fixed per-item
+   * amount when useFixedProfitAmount is true and profitAmount > 0.
+   *
+   * Callers should pass profitPercent from
+   * FactorySettings.targetProfitMarginPercent so there is a single
+   * source of truth.
+   */
+  fun calculateFinalUnitPrice(
+    fabricCostPerItem: Long,
+    fabricShippingShare: Long,
+    accessoriesCostPerItem: Long,
+    accessoriesShippingShare: Long,
+    tailorWagePerItem: Long,
+    overheadCostPerItem: Long,
+    profitPercent: Double,
+    profitAmount: Long = 0L,
+    useFixedProfitAmount: Boolean = false
+  ): Long {
+    val landedCost = fabricCostPerItem + fabricShippingShare +
+        accessoriesCostPerItem + accessoriesShippingShare +
+        tailorWagePerItem + overheadCostPerItem
+    val profit = if (useFixedProfitAmount && profitAmount > 0L) {
+      profitAmount
+    } else {
+      (landedCost * (profitPercent.coerceAtLeast(0.0) / 100.0)).toLong()
+    }
+    return (landedCost + profit).coerceAtLeast(0L)
+  }
+
   /**
    * 9 — تخصیص هزینه‌های ثابت بر اساس Scope
    * دامنه‌ها:
