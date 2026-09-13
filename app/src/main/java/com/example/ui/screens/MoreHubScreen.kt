@@ -553,7 +553,7 @@ fun MoreHubScreen(
     var sewingWageInput by remember { mutableStateOf("55000") }
     var accessoriesInput by remember { mutableStateOf("25000") }
     var overheadInput by remember { mutableStateOf("15000") }
-    var profitPercentInput by remember { mutableStateOf("40") }
+    var profitPercentInput by remember { mutableStateOf(factorySettings.targetProfitMarginPercent.toString()) }
 
     val metersVal = metersInput.toDoubleOrNull() ?: 0.0
     val gsmVal = gsmInput.toDoubleOrNull() ?: 0.0
@@ -565,7 +565,7 @@ fun MoreHubScreen(
     val wage = sewingWageInput.toLongOrNull() ?: 0L
     val acc = accessoriesInput.toLongOrNull() ?: 0L
     val overh = overheadInput.toLongOrNull() ?: 0L
-    val profitPct = profitPercentInput.toDoubleOrNull() ?: 40.0
+    val profitPct = profitPercentInput.toDoubleOrNull() ?: factorySettings.targetProfitMarginPercent
 
     val unitFabricCost = (cons * fPrice).toLong()
     val totalUnitCost = unitFabricCost + wage + acc + overh
