@@ -1592,18 +1592,23 @@ class ManufacturingRepository(private val database: AppDatabase) {
 
     // 6. Record Consumables
     consumablesList.forEach { c ->
+      val materialLookup = try { database.materialDao().getByCode(c.accessoryCode) } catch (_: Exception) { null }
+      val allocatedFreightForThisUse = if (materialLookup != null && materialLookup.stockQuantity > 0.0) {
+        ((materialLookup.allocatedShippingCost.toDouble() / materialLookup.stockQuantity) * c.quantityUsed).toLong()
+      } else 0L
       database.productionConsumableDao().insertConsumable(
         ProductionConsumableEntity(
           productionId = 0L,
           cuttingId = cuttingId,
-          materialId = 0L,
+          materialId = materialLookup?.id ?: 0L,
           accessoryCode = c.accessoryCode,
           accessoryName = c.accessoryName,
           quantityUsed = c.quantityUsed,
           unit = c.unit,
           unitCostPrice = c.unitCostPrice,
           totalCost = c.totalCost,
-          date = todayDate
+          date = todayDate,
+          allocatedShippingCost = allocatedFreightForThisUse
         )
       )
     }
@@ -1996,15 +2001,21 @@ class ManufacturingRepository(private val database: AppDatabase) {
 
     // 4. Record individual consumables
     for (item in consumables) {
+      val materialLookup = try { database.materialDao().getByCode(item.accessoryCode) } catch (_: Exception) { null }
+      val allocatedFreightForThisUse = if (materialLookup != null && materialLookup.stockQuantity > 0.0) {
+        ((materialLookup.allocatedShippingCost.toDouble() / materialLookup.stockQuantity) * item.quantityUsed).toLong()
+      } else 0L
       val entity = ProductionConsumableEntity(
         productionId = prodId,
+        materialId = materialLookup?.id ?: 0L,
         accessoryCode = item.accessoryCode,
         accessoryName = item.accessoryName,
         quantityUsed = item.quantityUsed,
         unit = item.unit,
         unitCostPrice = item.unitCostPrice,
         totalCost = item.totalCost,
-        date = currentDate
+        date = currentDate,
+        allocatedShippingCost = allocatedFreightForThisUse
       )
       database.productionConsumableDao().insertConsumable(entity)
     }

@@ -710,6 +710,7 @@ data class ProductionConsumableEntity(
   val unitCostPrice: Long, // قیمت واقعی محاسبه‌شده از سابقه خرید
   val totalCost: Long, // quantityUsed * unitCostPrice
   val date: String,
+  val allocatedShippingCost: Long = 0L, // Phase 16.7 — سهم کرایه ملزومات مصرف‌شده
 )
 
 /**
