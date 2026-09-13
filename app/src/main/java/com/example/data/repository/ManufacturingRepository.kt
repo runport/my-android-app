@@ -1918,6 +1918,19 @@ class ManufacturingRepository(private val database: AppDatabase) {
           )
         )
       }
+
+      // Phase 16.9b3a — snapshot shipping + overhead + sale price into
+      // the production record so final-price engine has real inputs.
+      val prodSnapshot = database.productionDao().getProductionById(prodId)
+      if (prodSnapshot != null) {
+        database.productionDao().updateProduction(
+          prodSnapshot.copy(
+            fabricShippingShare = shippingPerUnit,
+            overheadCostPerItem = allocatedFixed,
+            sellingPrice = item.salePricePerItem
+          )
+        )
+      }
     }
 
     // 2. Deduct from Roll — Phase 15 Patch 4D: only NEW meters (not Step 1 items)
