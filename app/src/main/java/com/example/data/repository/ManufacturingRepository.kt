@@ -1623,25 +1623,46 @@ class ManufacturingRepository(private val database: AppDatabase) {
       )
       val usageId = database.rollUsageDao().insertUsage(usage)
 
-      // B. Create Production Record (Status: آماده ارسال / تکمیل موجودی)
-      val prodEntity = ProductionEntity(
-        modelCode = item.modelCode,
-        modelName = item.modelName,
-        quantity = item.readyQuantity,
-        fabricRollsUsed = 1,
-        fabricMetersUsed = item.metersUsed,
-        totalWeightKg = weightUsedKg,
-        sewingWagePerItem = item.sewingWagePerItem,
-        fabricPricePerMeter = roll.buyPricePerMeter,
-        accessoriesCostPerItem = item.accessoriesCostPerItem,
-        status = SaleOrderStatus.READY_FOR_SHIPPING,
-        date = currentDate,
-        rollId = roll.id,
-        rollCode = roll.rollCode,
-        consumablesSummary = "تولید مستقیم از طاقه ${roll.rollCode} (${item.metersUsed} متر)",
-        orderId = null
-      )
-      val prodId = database.productionDao().insertProduction(prodEntity)
+      // B. Create or update Production Record (Status: آماده ارسال / تکمیل موجودی)
+      // Phase 15 Patch 4C: if productionId > 0, UPDATE existing instead of creating a duplicate
+      val existingProd = if (item.productionId > 0L) {
+        database.productionDao().getProductionById(item.productionId)
+      } else null
+      val prodId: Long = if (existingProd != null) {
+        database.productionDao().updateProduction(
+          existingProd.copy(
+            modelCode = item.modelCode,
+            modelName = item.modelName,
+            quantity = item.readyQuantity,
+            fabricMetersUsed = item.metersUsed,
+            totalWeightKg = weightUsedKg,
+            sewingWagePerItem = item.sewingWagePerItem,
+            accessoriesCostPerItem = item.accessoriesCostPerItem,
+            status = SaleOrderStatus.READY_FOR_SHIPPING,
+            date = currentDate
+          )
+        )
+        existingProd.id
+      } else {
+        val prodEntity = ProductionEntity(
+          modelCode = item.modelCode,
+          modelName = item.modelName,
+          quantity = item.readyQuantity,
+          fabricRollsUsed = 1,
+          fabricMetersUsed = item.metersUsed,
+          totalWeightKg = weightUsedKg,
+          sewingWagePerItem = item.sewingWagePerItem,
+          fabricPricePerMeter = roll.buyPricePerMeter,
+          accessoriesCostPerItem = item.accessoriesCostPerItem,
+          status = SaleOrderStatus.READY_FOR_SHIPPING,
+          date = currentDate,
+          rollId = roll.id,
+          rollCode = roll.rollCode,
+          consumablesSummary = "تولید مستقیم از طاقه ${roll.rollCode} (${item.metersUsed} متر)",
+          orderId = null
+        )
+        database.productionDao().insertProduction(prodEntity)
+      }
 
       // C. Allocate Fixed Costs according to Scope
       val allFixedCosts = database.fixedCostDao().getAllFixedCostsList()

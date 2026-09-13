@@ -130,6 +130,9 @@ interface ProductionDao {
   @Query("SELECT * FROM production_records ORDER BY id DESC")
   fun getAllProductions(): Flow<List<ProductionEntity>>
 
+  @Query("SELECT * FROM production_records WHERE id = :id LIMIT 1")
+  suspend fun getProductionById(id: Long): ProductionEntity?
+
   @Insert(onConflict = OnConflictStrategy.REPLACE)
   suspend fun insertProduction(production: ProductionEntity): Long
 

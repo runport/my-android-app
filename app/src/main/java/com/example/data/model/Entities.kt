@@ -717,6 +717,7 @@ data class ProductionConsumableEntity(
  */
 data class MultiProductReadyItem(
   val id: String = java.util.UUID.randomUUID().toString(),
+  val productionId: Long = 0L,
   val modelName: String,
   val modelCode: String,
   val readyQuantity: Int,

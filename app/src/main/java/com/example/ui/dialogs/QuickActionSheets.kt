@@ -1063,6 +1063,7 @@ fun QuickFabricForm(
  */
 data class ReadyProductLineDraft(
   val id: String = java.util.UUID.randomUUID().toString(),
+  val productionId: Long = 0L,
   var name: String = "هودی بیسیک پاییزه",
   var code: String = "HD-204",
   var readyQuantityText: String = "50",
@@ -1114,6 +1115,7 @@ fun QuickReadyGoodsForm(
     productLines.clear()
     productLines.addAll(pendingProductions.map { prod ->
       ReadyProductLineDraft(
+        productionId = prod.id,
         name = prod.modelName,
         code = prod.modelCode,
         readyQuantityText = prod.quantity.toString(),
@@ -1126,6 +1128,7 @@ fun QuickReadyGoodsForm(
     })
   }
 
+  var editMode by remember { mutableStateOf(false) }
   var pickerLineIndex by remember { mutableStateOf<Int?>(null) }
   var rollDropdownExpanded by remember { mutableStateOf(false) }
 
@@ -1137,7 +1140,7 @@ fun QuickReadyGoodsForm(
       items = readyGoodsList,
       onDismiss = { pickerLineIndex = null },
       onAddNew = {
-        if (targetIndex in productLines.indices) {
+        if (targetIndex in productLines.indices && editMode) {
           productLines[targetIndex] = productLines[targetIndex].copy(
             name = "",
             code = "",
@@ -1214,8 +1217,25 @@ fun QuickReadyGoodsForm(
           )
         }
       }
-      IconButton(onClick = onBack) {
-        Icon(Icons.Default.Close, "بازگشت", tint = customColors.textMuted)
+      Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+        Button(
+          onClick = { editMode = !editMode },
+          shape = RoundedCornerShape(8.dp),
+          colors = ButtonDefaults.buttonColors(
+            containerColor = if (editMode) StatusSuccess.copy(alpha = 0.2f) else customColors.secondaryBg
+          ),
+          modifier = Modifier.height(34.dp)
+        ) {
+          Text(
+            text = if (editMode) "🔒 قفل" else "✏️ ویرایش",
+            fontSize = 11.sp,
+            color = if (editMode) StatusSuccess else AccentBlue,
+            fontWeight = FontWeight.Bold
+          )
+        }
+        IconButton(onClick = onBack) {
+          Icon(Icons.Default.Close, "بازگشت", tint = customColors.textMuted)
+        }
       }
     }
 
@@ -1465,7 +1485,7 @@ fun QuickReadyGoodsForm(
               // Remove button (-)
               if (productLines.size > 1) {
                 IconButton(
-                  onClick = { productLines.removeAt(index) },
+                  onClick = { if (editMode) productLines.removeAt(index) },
                   modifier = Modifier.size(28.dp)
                 ) {
                   Icon(Icons.Default.Remove, contentDescription = "حذف محصول", tint = StatusDanger, modifier = Modifier.size(16.dp))
@@ -1479,14 +1499,14 @@ fun QuickReadyGoodsForm(
               ExecutiveTextField(
                 label = "نام محصول",
                 value = line.name,
-                onValueChange = { productLines[index] = line.copy(name = it) }
+                onValueChange = { if (editMode) productLines[index] = line.copy(name = it) }
               )
             }
             Box(modifier = Modifier.weight(0.7f)) {
               ExecutiveTextField(
                 label = "کد مدل",
                 value = line.code,
-                onValueChange = { productLines[index] = line.copy(code = it) }
+                onValueChange = { if (editMode) productLines[index] = line.copy(code = it) }
               )
             }
           }
@@ -1497,7 +1517,7 @@ fun QuickReadyGoodsForm(
                 label = "تعداد کار آماده (عدد)",
                 value = line.readyQuantityText,
                 keyboardType = KeyboardType.Number,
-                onValueChange = { productLines[index] = line.copy(readyQuantityText = it) }
+                onValueChange = { if (editMode) productLines[index] = line.copy(readyQuantityText = it) }
               )
             }
             Box(modifier = Modifier.weight(1f)) {
@@ -1520,7 +1540,7 @@ fun QuickReadyGoodsForm(
                         .weight(1f)
                         .clip(RoundedCornerShape(4.dp))
                         .background(if (isSel) AccentIndigo else Color.Transparent)
-                        .clickable { productLines[index] = line.copy(consumptionUnit = u) }
+                        .clickable { if (editMode) productLines[index] = line.copy(consumptionUnit = u) }
                         .padding(vertical = 3.dp),
                       contentAlignment = Alignment.Center
                     ) {
@@ -1532,7 +1552,7 @@ fun QuickReadyGoodsForm(
                   label = "میزان مصرف (${line.consumptionUnit.shortUnit})",
                   value = line.metersUsedText,
                   keyboardType = KeyboardType.Decimal,
-                  onValueChange = { productLines[index] = line.copy(metersUsedText = it) }
+                  onValueChange = { if (editMode) productLines[index] = line.copy(metersUsedText = it) }
                 )
                 if (enteredRaw > 0.0) {
                   val eqv = if (line.consumptionUnit == FabricConsumptionUnit.METERS) {
@@ -1551,7 +1571,7 @@ fun QuickReadyGoodsForm(
                 label = "هزینه خیاط‌کار هر کار (تومان)",
                 value = line.sewingWageText,
                 keyboardType = KeyboardType.Number,
-                onValueChange = { productLines[index] = line.copy(sewingWageText = it) }
+                onValueChange = { if (editMode) productLines[index] = line.copy(sewingWageText = it) }
               )
             }
             Box(modifier = Modifier.weight(1f)) {
@@ -1559,7 +1579,7 @@ fun QuickReadyGoodsForm(
                 label = "هزینه ملزومات هر کار (تومان)",
                 value = line.accessoriesCostText,
                 keyboardType = KeyboardType.Number,
-                onValueChange = { productLines[index] = line.copy(accessoriesCostText = it) }
+                onValueChange = { if (editMode) productLines[index] = line.copy(accessoriesCostText = it) }
               )
             }
           }
@@ -1570,7 +1590,7 @@ fun QuickReadyGoodsForm(
                 label = "قیمت فروش هر عدد (تومان)",
                 value = line.salePriceText,
                 keyboardType = KeyboardType.Number,
-                onValueChange = { productLines[index] = line.copy(salePriceText = it) }
+                onValueChange = { if (editMode) productLines[index] = line.copy(salePriceText = it) }
               )
             }
             Box(modifier = Modifier.weight(1f)) {
@@ -1578,7 +1598,7 @@ fun QuickReadyGoodsForm(
                 label = "وزن هر عدد (گرم)",
                 value = line.unitWeightGramsText,
                 keyboardType = KeyboardType.Decimal,
-                onValueChange = { productLines[index] = line.copy(unitWeightGramsText = it) }
+                onValueChange = { if (editMode) productLines[index] = line.copy(unitWeightGramsText = it) }
               )
             }
           }
@@ -1628,6 +1648,7 @@ fun QuickReadyGoodsForm(
             val entered = draft.metersUsedText.toDoubleOrNull() ?: 0.0
             val effMeters = if (draft.consumptionUnit == FabricConsumptionUnit.METERS) entered else entered * rollMetersPerKg
             MultiProductReadyItem(
+              productionId = draft.productionId,
               modelName = draft.name,
               modelCode = draft.code,
               readyQuantity = draft.readyQuantityText.toIntOrNull() ?: 0,
