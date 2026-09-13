@@ -626,6 +626,11 @@ class ManufacturingViewModel(
     FinancialCalculationService.generateFabricReport(fabs, rolls)
   }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), FabricReportData())
 
+  // Phase 15 Patch 5B: fabric price history for report screen
+  val fabricPriceHistory: StateFlow<List<FabricPriceHistoryEntity>> =
+    repository.allFabricPriceHistory
+      .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
   val freightReport: StateFlow<FreightReportData> = combine(
     shippingExpenses, fabricRolls
   ) { shipping, rolls ->

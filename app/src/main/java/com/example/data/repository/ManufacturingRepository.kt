@@ -87,6 +87,10 @@ class ManufacturingRepository(private val database: AppDatabase) {
   val allMaterials: Flow<List<MaterialEntity>> = database.materialDao().getAllMaterials()
   val allMaterialUnits: Flow<List<MaterialUnitEntity>> = database.materialUnitDao().getAllUnits()
   val allBOMs: Flow<List<ProductBOMEntity>> = database.productBOMDao().getAllBOMs()
+
+  // Phase 15 Patch 5B: fabric price history flow for reporting
+  val allFabricPriceHistory: Flow<List<FabricPriceHistoryEntity>> =
+    database.fabricPriceHistoryDao().getAllHistory()
   val allMaterialPriceHistory: Flow<List<MaterialPriceHistoryEntity>> = database.materialPriceHistoryDao().getAllHistory()
   val allProductPriceHistory: Flow<List<ProductPriceHistoryEntity>> = database.productPriceHistoryDao().getAllHistory()
   val allPriceChangeReasons: Flow<List<PriceChangeReasonEntity>> = database.priceChangeReasonDao().getAllReasons()

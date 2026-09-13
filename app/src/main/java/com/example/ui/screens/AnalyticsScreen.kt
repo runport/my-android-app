@@ -81,6 +81,7 @@ fun AnalyticsScreen(
 ) {
   val customColors = LocalCustomColors.current
   val activeCategory by viewModel.activeReportCategory.collectAsStateWithLifecycle()
+  val fabricPriceHistory by viewModel.fabricPriceHistory.collectAsStateWithLifecycle()
 
   val salesReport by viewModel.salesReport.collectAsStateWithLifecycle()
   val productionReport by viewModel.productionReport.collectAsStateWithLifecycle()
@@ -239,7 +240,8 @@ fun AnalyticsScreen(
       ReportCategory.FABRIC -> {
         item {
           FabricReportSection(
-            report = fabricReport
+            report = fabricReport,
+            priceHistory = fabricPriceHistory
           )
         }
       }
@@ -1306,7 +1308,8 @@ private fun ConsumablesReportSection(
 
 @Composable
 private fun FabricReportSection(
-  report: FabricReportData
+  report: FabricReportData,
+  priceHistory: List<com.example.data.model.FabricPriceHistoryEntity> = emptyList()
 ) {
   val customColors = LocalCustomColors.current
 
@@ -1424,6 +1427,84 @@ private fun FabricReportSection(
         label = "متراژ مانده (Remaining)",
         value = "${report.remainingMeters.toInt()} متر"
       )
+    }
+
+    // Phase 15 Patch 5B: fabric price history timeline
+    if (priceHistory.isNotEmpty()) {
+      Box(
+        modifier = Modifier
+          .fillMaxWidth()
+          .clip(RoundedCornerShape(14.dp))
+          .background(customColors.card)
+          .border(1.dp, AccentIndigo.copy(alpha = 0.4f), RoundedCornerShape(14.dp))
+          .padding(14.dp)
+      ) {
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+          Text(
+            text = "تاریخچه تغییرات قیمت پارچه (${priceHistory.size} رکورد)",
+            style = MaterialTheme.typography.labelMedium,
+            color = AccentIndigo,
+            fontWeight = FontWeight.Bold
+          )
+          priceHistory.take(10).forEach { h ->
+            val change = h.changeAmountPerMeter
+            val isUp = change > 0L
+            val changeColor = if (isUp)
+              androidx.compose.ui.graphics.Color(0xFFEF5350)
+            else
+              androidx.compose.ui.graphics.Color(0xFF66BB6A)
+            val changeSign = if (isUp) "+" else ""
+            Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+              Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween) {
+                Text(
+                  text = h.fabricCategoryName.ifBlank { "دسته نامشخص" },
+                  fontSize = 11.sp,
+                  color = customColors.textPrimary,
+                  fontWeight = FontWeight.Bold
+                )
+                Text(
+                  text = h.date,
+                  fontSize = 10.sp,
+                  color = customColors.textMuted
+                )
+              }
+              Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween) {
+                Text(
+                  text = "${h.oldPricePerMeter} ← ${h.newPricePerMeter} تومان/متر",
+                  fontSize = 10.sp,
+                  color = customColors.textSecondary
+                )
+                Text(
+                  text = "$changeSign$change (${String.format(java.util.Locale.US, "%.1f", h.changePercentPerMeter)}٪)",
+                  fontSize = 10.sp,
+                  color = changeColor,
+                  fontWeight = FontWeight.Bold
+                )
+              }
+              val barFraction = (kotlin.math.abs(h.changePercentPerMeter).toFloat() / 100f).coerceIn(0.05f, 1f)
+              Box(
+                modifier = Modifier
+                  .fillMaxWidth(barFraction)
+                  .height(4.dp)
+                  .clip(RoundedCornerShape(2.dp))
+                  .background(changeColor.copy(alpha = 0.6f))
+              )
+              Text(
+                text = "${h.affectedRollCount} طاقه • ${h.reason.ifBlank { "—" }}",
+                fontSize = 9.sp,
+                color = customColors.textMuted
+              )
+            }
+          }
+          if (priceHistory.size > 10) {
+            Text(
+              text = "... و ${priceHistory.size - 10} رکورد قدیمی‌تر",
+              fontSize = 9.sp,
+              color = customColors.textMuted
+            )
+          }
+        }
+      }
     }
 
     // Roll-by-roll list
