@@ -2187,6 +2187,12 @@ fun QuickSaleForm(
   val customColors = LocalCustomColors.current
   val customers by viewModel.customers.collectAsStateWithLifecycle()
   val products by viewModel.products.collectAsStateWithLifecycle()
+  val inventory by viewModel.inventory.collectAsStateWithLifecycle()
+  val readyProducts = remember(products, inventory) {
+    products.filter { p ->
+      inventory.any { inv -> inv.code == p.code && inv.category == "محصولات آماده" }
+    }
+  }
   var showCustomerPicker by remember { mutableStateOf(false) }
   var showProductPicker by remember { mutableStateOf(false) }
 
@@ -2198,9 +2204,6 @@ fun QuickSaleForm(
   var unitPriceText by remember { mutableStateOf("680000") }
   var discountText by remember { mutableStateOf("500000") }
   var prePaymentText by remember { mutableStateOf("15000000") }
-  var pricingMode by remember { mutableStateOf("UNIT") }
-  var pricePerKgText by remember { mutableStateOf("450000") }
-  var metersPerKgText by remember { mutableStateOf("3.0") }
 
   val qty = quantityText.toIntOrNull() ?: 0
   val effectiveUnitPrice = unitPriceText.toLongOrNull() ?: 0L
@@ -2319,8 +2322,8 @@ fun QuickSaleForm(
     // Product Picker Dialog
     if (showProductPicker) {
       ItemSelectionPopupDialog(
-        title = "انتخاب محصول برای فروش",
-        items = products,
+        title = "انتخاب محصول برای فروش (فقط کالای آماده)",
+        items = readyProducts,
         onDismiss = { showProductPicker = false },
         onAddNew = { showProductPicker = false },
         onItemSelected = { p ->
@@ -2336,85 +2339,13 @@ fun QuickSaleForm(
       )
     }
 
-    // Pricing Mode Toggle (Requirement 12: قیمت بر اساس متر / عدد vs کیلوگرم)
-    Row(
-      modifier = Modifier
-        .fillMaxWidth()
-        .clip(RoundedCornerShape(8.dp))
-        .background(customColors.secondaryBg)
-        .padding(4.dp),
-      horizontalArrangement = Arrangement.spacedBy(4.dp)
-    ) {
-      Box(
-        modifier = Modifier
-          .weight(1f)
-          .clip(RoundedCornerShape(6.dp))
-          .background(if (pricingMode == "UNIT") AccentIndigo else Color.Transparent)
-          .clickable { pricingMode = "UNIT" }
-          .padding(8.dp),
-        contentAlignment = Alignment.Center
-      ) {
-        Text("قیمت بر اساس متر / عدد", fontSize = 11.sp, color = if (pricingMode == "UNIT") Color.White else customColors.textSecondary, fontWeight = FontWeight.Bold)
-      }
-      Box(
-        modifier = Modifier
-          .weight(1f)
-          .clip(RoundedCornerShape(6.dp))
-          .background(if (pricingMode == "KG") AccentIndigo else Color.Transparent)
-          .clickable { pricingMode = "KG" }
-          .padding(8.dp),
-        contentAlignment = Alignment.Center
-      ) {
-        Text("قیمت بر اساس کیلوگرم (محاسبه خودکار متر)", fontSize = 11.sp, color = if (pricingMode == "KG") Color.White else customColors.textSecondary, fontWeight = FontWeight.Bold)
-      }
-    }
-
-    if (pricingMode == "KG") {
-      Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        Box(modifier = Modifier.weight(1f)) {
-          ExecutiveTextField(
-            label = "قیمت هر کیلوگرم (تومان)",
-            value = pricePerKgText,
-            keyboardType = KeyboardType.Number,
-            onValueChange = {
-              pricePerKgText = it
-              val pkg = it.toLongOrNull() ?: 0L
-              val mpk = metersPerKgText.toDoubleOrNull() ?: 3.0
-              val pm = FinancialCalculationService.calculatePricePerMeter(pkg, mpk)
-              unitPriceText = pm.toString()
-            }
-          )
-        }
-        Box(modifier = Modifier.weight(1f)) {
-          ExecutiveTextField(
-            label = "متراژ در هر کیلوگرم",
-            value = metersPerKgText,
-            keyboardType = KeyboardType.Decimal,
-            onValueChange = {
-              metersPerKgText = it
-              val pkg = pricePerKgText.toLongOrNull() ?: 0L
-              val mpk = it.toDoubleOrNull() ?: 3.0
-              val pm = FinancialCalculationService.calculatePricePerMeter(pkg, mpk)
-              unitPriceText = pm.toString()
-            }
-          )
-        }
-      }
-      Text(
-        text = "💡 قیمت محاسبه‌شده هر متر بر اساس وزن: ${CurrencyHelper.formatToman(effectiveUnitPrice)}",
-        style = MaterialTheme.typography.labelSmall,
-        color = StatusSuccess,
-        fontWeight = FontWeight.Bold
-      )
-    }
-
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
       Box(modifier = Modifier.weight(1f)) {
-        ExecutiveTextField(label = "تعداد / متراژ کل", value = quantityText, keyboardType = KeyboardType.Number, onValueChange = { quantityText = it })
+        ExecutiveTextField(label = "تعداد", value = quantityText, keyboardType = KeyboardType.Number, onValueChange = { quantityText = it })
       }
       Box(modifier = Modifier.weight(1f)) {
         ExecutiveTextField(
-          label = if (pricingMode == "KG") "قیمت واحد محاسبه‌شده (تومان)" else "قیمت واحد (تومان)",
+          label = "قیمت واحد (تومان)",
           value = unitPriceText,
           keyboardType = KeyboardType.Number,
           onValueChange = { unitPriceText = it }
