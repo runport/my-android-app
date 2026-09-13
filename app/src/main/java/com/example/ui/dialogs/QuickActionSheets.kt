@@ -4590,14 +4590,28 @@ fun QuickRollConsumeForm(
           onValueChange = { otherDirectCostText = it }
         )
 
-        // پیش‌نمایش محاسبه
+        // پیش‌نمایش محاسبه (فاز ۱۶.۹b1 — از موتور قیمت‌گذاری واحد)
         val fabricCostPerUnit = if (garmentCount > 0) ((metersUsed * buyPriceMeter) / garmentCount).toLong() else 0L
+        val fabricShippingPerUnit = if (garmentCount > 0) allocatedShippingCost / garmentCount else 0L
         val tailorVal = tailorCostText.toLongOrNull() ?: 0L
         val baseVal = baseMaterialsText.toLongOrNull() ?: 0L
+        val otherDirectPerUnit = (otherDirectCostText.toLongOrNull() ?: 0L) / garmentCount.coerceAtLeast(1)
         val profitPct = profitPercentText.toDoubleOrNull() ?: 0.0
-        val subtotal = fabricCostPerUnit + tailorVal + baseVal
-        val profitVal = (subtotal * profitPct / 100.0).toLong()
-        val finalUnitPrice = subtotal + profitVal
+        val profitAmtVal = profitAmountText.toLongOrNull() ?: 0L
+        val useFixedProfit = profitAmountText.isNotBlank() && profitAmtVal > 0L
+        val subtotal = fabricCostPerUnit + fabricShippingPerUnit + tailorVal + baseVal + otherDirectPerUnit
+        val finalUnitPrice = FinancialCalculationService.calculateFinalUnitPrice(
+          fabricCostPerItem = fabricCostPerUnit,
+          fabricShippingShare = fabricShippingPerUnit,
+          accessoriesCostPerItem = baseVal,
+          accessoriesShippingShare = 0L,
+          tailorWagePerItem = tailorVal,
+          overheadCostPerItem = otherDirectPerUnit,
+          profitPercent = profitPct,
+          profitAmount = profitAmtVal,
+          useFixedProfitAmount = useFixedProfit
+        )
+        val profitVal = (finalUnitPrice - subtotal).coerceAtLeast(0L)
 
         HorizontalDivider(color = customColors.border)
 
