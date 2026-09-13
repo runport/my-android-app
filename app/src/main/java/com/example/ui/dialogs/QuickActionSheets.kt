@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -97,6 +98,7 @@ import com.example.data.model.MultiProductReadyItem
 import com.example.data.model.OrderStatusHistoryEntity
 import com.example.data.model.ProductionConsumableInputItem
 import com.example.data.model.RollUsageEntity
+import com.example.data.model.SaleLineInput
 import com.example.data.model.SaleOrderEntity
 import com.example.data.model.SaleOrderStatus
 import com.example.data.model.ShippingAllocationMethod
@@ -2445,6 +2447,20 @@ data class ConsumableInputDraft(
   var quantityUsedText: String = "100",
   var unit: String = "عدد",
   var unitCostPrice: Long = 18000L
+)
+
+/**
+ * Phase 16.3b — UI draft for one line of a multi-line sale invoice.
+ * Immutable so that SnapshotStateList recomposition fires on edit
+ * (replace the item, don't mutate a field).
+ */
+data class SaleLineDraft(
+  val id: String = java.util.UUID.randomUUID().toString(),
+  val modelCode: String,
+  val modelName: String,
+  val quantityText: String = "1",
+  val unitPriceText: String = "0",
+  val unitCost: Long = 0L
 )
 
 /**
