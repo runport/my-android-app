@@ -2198,6 +2198,7 @@ fun QuickSaleForm(
   }
   var showCustomerPicker by remember { mutableStateOf(false) }
   var showProductPicker by remember { mutableStateOf(false) }
+  var showNewCustomerForm by remember { mutableStateOf(false) }
 
   var customerName by remember { mutableStateOf("بوتیک آریا (احمدی)") }
   var customerPhone by remember { mutableStateOf("09121234567") }
@@ -2306,9 +2307,8 @@ fun QuickSaleForm(
         items = customers,
         onDismiss = { showCustomerPicker = false },
         onAddNew = {
-          customerName = ""
-          customerPhone = ""
           showCustomerPicker = false
+          showNewCustomerForm = true
         },
         onItemSelected = { cust ->
           customerName = cust.name
@@ -2340,6 +2340,38 @@ fun QuickSaleForm(
         itemSecondary = { "دسته: ${it.categoryName} | قیمت فروش: ${CurrencyHelper.formatToman(it.effectiveSellingPrice)}" },
         itemPrice = { it.effectiveSellingPrice }
       )
+    }
+
+    // Inline New Customer dialog on top of QuickSaleForm
+    if (showNewCustomerForm) {
+      Dialog(
+        onDismissRequest = { showNewCustomerForm = false },
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+      ) {
+        Card(
+          modifier = Modifier
+            .fillMaxWidth(0.95f)
+            .padding(16.dp),
+          colors = CardDefaults.cardColors(containerColor = customColors.card),
+          shape = RoundedCornerShape(16.dp)
+        ) {
+          Box(
+            modifier = Modifier
+              .padding(16.dp)
+              .heightIn(max = 520.dp)
+          ) {
+            QuickCustomerForm(
+              onSubmit = { name, company, phone, addr, cat ->
+                viewModel.submitCustomer(name, company, phone, addr, cat)
+                customerName = name
+                customerPhone = phone
+                showNewCustomerForm = false
+              },
+              onBack = { showNewCustomerForm = false }
+            )
+          }
+        }
+      }
     }
 
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
