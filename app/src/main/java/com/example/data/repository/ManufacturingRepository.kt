@@ -246,17 +246,73 @@ class ManufacturingRepository(private val database: AppDatabase) {
     )
     database.saleOrderDao().insertOrder(order)
 
-    // Check inventory and reserve stock or trigger shortage requirement automatically
-    val inventoryItem = database.inventoryDao().getByCode("PRD-${modelCode.removePrefix("M")}")
+    // ============================================================
+    // Phase 16.2a: Deduct stock on sale + write inventory ledger.
+    //   fully paid  -> SALE_SHIPMENT  (available -= q, ready -= q)
+    //   unpaid/part -> SALE_RESERVATION (available -= q, reserved += q)
+    // ============================================================
+    val netTotal = (quantity.toLong() * unitPrice - discountAmount).coerceAtLeast(0L)
+    val isFullyPaid = paidAmount >= netTotal
+    val prodCode = "PRD-${modelCode.removePrefix("M")}"
+    val inventoryItem = database.inventoryDao().getByCode(prodCode)
     if (inventoryItem != null) {
+      val wasEnough = inventoryItem.availableForSale >= quantity
       val newAvailable = (inventoryItem.availableForSale - quantity).coerceAtLeast(0)
-      val newReserved = inventoryItem.reservedQuantity + quantity.coerceAtMost(inventoryItem.availableForSale)
-      database.inventoryDao().updateItem(
-        inventoryItem.copy(
-          availableForSale = newAvailable,
-          reservedQuantity = newReserved
+      val shortageNote = if (wasEnough) "" else " (کسری: ${quantity - inventoryItem.availableForSale} عدد)"
+      if (isFullyPaid) {
+        val newReady = (inventoryItem.readyForShipment - quantity).coerceAtLeast(0)
+        database.inventoryDao().updateItem(
+          inventoryItem.copy(
+            availableForSale = newAvailable,
+            readyForShipment = newReady,
+            lastUpdated = "امروز"
+          )
         )
-      )
+        database.inventoryLedgerDao().insert(
+          InventoryLedgerEntity(
+            timestamp = System.currentTimeMillis(),
+            date = "امروز",
+            itemType = "FINISHED_GOOD",
+            itemId = inventoryItem.id,
+            itemCode = prodCode,
+            itemName = modelName,
+            transactionType = "SALE_SHIPMENT",
+            quantityChange = -quantity.toDouble(),
+            balanceAfter = newAvailable.toDouble(),
+            unit = "عدد",
+            unitPriceAtTime = unitCost,
+            relatedDocumentNumber = orderNumber,
+            notes = "فروش قطعی $quantity عدد$shortageNote - مشتری: $customerName",
+            operator = "مدیر سیستم"
+          )
+        )
+      } else {
+        database.inventoryDao().updateItem(
+          inventoryItem.copy(
+            availableForSale = newAvailable,
+            reservedQuantity = inventoryItem.reservedQuantity + quantity.coerceAtMost(inventoryItem.availableForSale),
+            lastUpdated = "امروز"
+          )
+        )
+        database.inventoryLedgerDao().insert(
+          InventoryLedgerEntity(
+            timestamp = System.currentTimeMillis(),
+            date = "امروز",
+            itemType = "FINISHED_GOOD",
+            itemId = inventoryItem.id,
+            itemCode = prodCode,
+            itemName = modelName,
+            transactionType = "SALE_RESERVATION",
+            quantityChange = -quantity.toDouble(),
+            balanceAfter = newAvailable.toDouble(),
+            unit = "عدد",
+            unitPriceAtTime = unitCost,
+            relatedDocumentNumber = orderNumber,
+            notes = "رزرو $quantity عدد$shortageNote - مشتری: $customerName",
+            operator = "مدیر سیستم"
+          )
+        )
+      }
     }
   }
 
