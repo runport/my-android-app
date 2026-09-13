@@ -1100,20 +1100,30 @@ fun QuickReadyGoodsForm(
   }
   val selectedRoll = availableRolls.find { it.id == selectedRollId } ?: availableRolls.firstOrNull()
 
-  // Multi-product lines list from this roll
-  val productLines = remember {
-    mutableStateListOf(
+  // Phase 15 Patch 4B: auto-populate from ProductionEntity
+  val productions by viewModel.productions.collectAsStateWithLifecycle()
+  val pendingProductions = remember(productions, selectedRollId) {
+    productions.filter {
+      it.rollId == selectedRollId &&
+      it.status != "آماده ارسال / تکمیل موجودی" &&
+      it.status != "تکمیل شده"
+    }
+  }
+  val productLines = remember { mutableStateListOf<ReadyProductLineDraft>() }
+  LaunchedEffect(pendingProductions) {
+    productLines.clear()
+    productLines.addAll(pendingProductions.map { prod ->
       ReadyProductLineDraft(
-        name = "هودی کلاه‌دار پاییزه",
-        code = "HD-204",
-        readyQuantityText = "40",
-        metersUsedText = "30.0",
-        sewingWageText = "85000",
-        accessoriesCostText = "32000",
-        salePriceText = "680000",
-        unitWeightGramsText = "550"
+        name = prod.modelName,
+        code = prod.modelCode,
+        readyQuantityText = prod.quantity.toString(),
+        metersUsedText = prod.fabricMetersUsed.toString(),
+        sewingWageText = prod.sewingWagePerItem.toString(),
+        accessoriesCostText = prod.accessoriesCostPerItem.toString(),
+        salePriceText = prod.estimatedSalePricePerItem.toString(),
+        unitWeightGramsText = prod.weightPerItemGrams.toInt().toString()
       )
-    )
+    })
   }
 
   var pickerLineIndex by remember { mutableStateOf<Int?>(null) }
@@ -1189,7 +1199,7 @@ fun QuickReadyGoodsForm(
     ) {
       Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
         Text(
-          text = "ثبت کار آماده (چند محصول از یک طاقه)",
+          text = "کارهای آماده",
           style = MaterialTheme.typography.titleMedium,
           color = customColors.textPrimary,
           fontWeight = FontWeight.Bold
