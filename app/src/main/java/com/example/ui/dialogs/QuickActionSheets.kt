@@ -1103,11 +1103,11 @@ fun QuickReadyGoodsForm(
 
   // Phase 15 Patch 4B: auto-populate from ProductionEntity
   val productions by viewModel.productions.collectAsStateWithLifecycle()
-  val pendingProductions = remember(productions, selectedRollId) {
+  var statusFilter by remember { mutableStateOf("در حال دوخت") }
+  val pendingProductions = remember(productions, selectedRollId, statusFilter) {
     productions.filter {
       it.rollId == selectedRollId &&
-      it.status != "آماده ارسال / تکمیل موجودی" &&
-      it.status != "تکمیل شده"
+      it.status == statusFilter
     }
   }
   val productLines = remember { mutableStateListOf<ReadyProductLineDraft>() }
@@ -1418,13 +1418,41 @@ fun QuickReadyGoodsForm(
     }
 
     // 3. MULTI-PRODUCT LIST (محصولات تولیدی از این طاقه)
-    Text(
-      text = "محصولات تولیدی از این طاقه (${productLines.size} قلم)",
-      style = MaterialTheme.typography.labelLarge,
-      color = customColors.textPrimary,
-      fontWeight = FontWeight.Bold,
-      modifier = Modifier.fillMaxWidth()
-    )
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+      Text(
+        text = "محصولات تولیدی از این طاقه (${productLines.size} قلم)",
+        style = MaterialTheme.typography.labelLarge,
+        color = customColors.textPrimary,
+        fontWeight = FontWeight.Bold,
+        modifier = Modifier.fillMaxWidth()
+      )
+      // Phase 15 Patch 4D: status filter chips
+      Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
+      ) {
+        listOf("برش خورده", "در حال دوخت").forEach { st ->
+          val sel = statusFilter == st
+          Box(
+            modifier = Modifier
+              .weight(1f)
+              .clip(RoundedCornerShape(8.dp))
+              .background(if (sel) AccentIndigo else customColors.cardElevated)
+              .border(1.dp, if (sel) AccentIndigo else customColors.border, RoundedCornerShape(8.dp))
+              .clickable { statusFilter = st }
+              .padding(vertical = 8.dp),
+            contentAlignment = Alignment.Center
+          ) {
+            Text(
+              st,
+              fontSize = 11.sp,
+              fontWeight = if (sel) FontWeight.Bold else FontWeight.Normal,
+              color = if (sel) Color.White else customColors.textPrimary
+            )
+          }
+        }
+      }
+    }
 
     // Product Line Cards
     productLines.forEachIndexed { index, line ->
@@ -4270,13 +4298,27 @@ fun QuickRollConsumeForm(
                   color = customColors.textMuted
                 )
               }
-              Box(
-                modifier = Modifier
-                  .clip(RoundedCornerShape(4.dp))
-                  .background(AccentCyan.copy(alpha = 0.2f))
-                  .padding(horizontal = 6.dp, vertical = 2.dp)
-              ) {
-                Text(part.status, fontSize = 10.sp, color = AccentCyan, fontWeight = FontWeight.Bold)
+              Column(horizontalAlignment = Alignment.End) {
+                Box(
+                  modifier = Modifier
+                    .clip(RoundedCornerShape(4.dp))
+                    .background(AccentCyan.copy(alpha = 0.2f))
+                    .padding(horizontal = 6.dp, vertical = 2.dp)
+                ) {
+                  Text(part.status, fontSize = 10.sp, color = AccentCyan, fontWeight = FontWeight.Bold)
+                }
+                // Phase 15 Patch 4D: convert to ready goods
+                if (part.status == "برش خورده" || part.status == "در حال دوخت") {
+                  Spacer(Modifier.size(4.dp))
+                  Button(
+                    onClick = { viewModel.completeCuttingToReadyGoods(part.id) },
+                    shape = RoundedCornerShape(6.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = StatusSuccess.copy(alpha = 0.2f)),
+                    modifier = Modifier.height(26.dp)
+                  ) {
+                    Text("✅ تبدیل به کار آماده", fontSize = 9.sp, color = StatusSuccess, fontWeight = FontWeight.Bold)
+                  }
+                }
               }
             }
           }

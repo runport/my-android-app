@@ -1581,14 +1581,19 @@ class ManufacturingRepository(private val database: AppDatabase) {
     val roll = database.fabricRollDao().getRollById(rollId)
       ?: return Pair(false, "طاقه مورد نظر با شناسه $rollId یافت نشد")
 
-    // Total meters validation (کنترل دقیق موجودی طاقه)
+    // Phase 15 Patch 4D: only NEW items (productionId == 0) deduct from roll.
+    // Items coming from Step 1 (QuickRollConsumeForm) already deducted during
+    // consumeFabricRoll. Deducting them again would double-count.
     val totalRequestedMeters = products.sumOf { it.metersUsed }
-    if (!FinancialCalculationService.validateRollCapacity(roll.remainingMeters, totalRequestedMeters)) {
-      val deficit = String.format(java.util.Locale.US, "%.1f", totalRequestedMeters - roll.remainingMeters)
-      return Pair(
-        false,
-        "خطای کنترل موجودی طاقه ${roll.rollCode}: مجموع متراژ درخواستی ($totalRequestedMeters متر) از موجودی باقیمانده طاقه (${roll.remainingMeters} متر) بیشتر است! کسری: $deficit متر"
-      )
+    val totalNewMeters = products.filter { it.productionId == 0L }.sumOf { it.metersUsed }
+    if (totalNewMeters > 0.0) {
+      if (!FinancialCalculationService.validateRollCapacity(roll.remainingMeters, totalNewMeters)) {
+        val deficit = String.format(java.util.Locale.US, "%.1f", totalNewMeters - roll.remainingMeters)
+        return Pair(
+          false,
+          "خطای کنترل موجودی طاقه ${roll.rollCode}: مجموع متراژ درخواستی جدید ($totalNewMeters متر) از موجودی باقیمانده طاقه (${roll.remainingMeters} متر) بیشتر است! کسری: $deficit متر"
+        )
+      }
     }
 
     val currentDate = PersianDateHelper.getCurrentPersianDate()
@@ -1605,29 +1610,32 @@ class ManufacturingRepository(private val database: AppDatabase) {
       }
       val weightUsedKg = (item.unitWeightGrams * item.readyQuantity) / 1000.0
 
-      // A. Create Roll Usage record
-      val usage = RollUsageEntity(
-        rollId = roll.id,
-        rollCode = roll.rollCode,
-        productionId = 0L,
-        cuttingId = 0L,
-        modelCode = item.modelCode,
-        modelName = item.modelName,
-        metersUsed = item.metersUsed,
-        weightKgUsed = weightUsedKg,
-        usageDate = currentDate,
-        usageTimestamp = timestamp,
-        allocatedFabricCost = allocatedFabricCost,
-        allocatedShippingCost = allocatedShipping,
-        note = "ثبت کار آماده از طاقه ${roll.rollCode} ($note)"
-      )
-      val usageId = database.rollUsageDao().insertUsage(usage)
-
       // B. Create or update Production Record (Status: آماده ارسال / تکمیل موجودی)
       // Phase 15 Patch 4C: if productionId > 0, UPDATE existing instead of creating a duplicate
       val existingProd = if (item.productionId > 0L) {
         database.productionDao().getProductionById(item.productionId)
       } else null
+
+      // A. Create Roll Usage record — ONLY for NEW items.
+      // Phase 15 Patch 4D: existing productions already have a RollUsage from Step 1.
+      if (existingProd == null) {
+        val usage = RollUsageEntity(
+          rollId = roll.id,
+          rollCode = roll.rollCode,
+          productionId = 0L,
+          cuttingId = 0L,
+          modelCode = item.modelCode,
+          modelName = item.modelName,
+          metersUsed = item.metersUsed,
+          weightKgUsed = weightUsedKg,
+          usageDate = currentDate,
+          usageTimestamp = timestamp,
+          allocatedFabricCost = allocatedFabricCost,
+          allocatedShippingCost = allocatedShipping,
+          note = "ثبت کار آماده از طاقه ${roll.rollCode} ($note)"
+        )
+        database.rollUsageDao().insertUsage(usage)
+      }
       val prodId: Long = if (existingProd != null) {
         database.productionDao().updateProduction(
           existingProd.copy(
@@ -1717,15 +1725,17 @@ class ManufacturingRepository(private val database: AppDatabase) {
       }
     }
 
-    // 2. Deduct from Roll and update status
-    val newRemaining = FinancialCalculationService.calculateRemainingRollMeters(roll.remainingMeters, totalRequestedMeters)
-    val newStatus = if (newRemaining <= 0.5) "پایان یافته" else "در حال مصرف"
-    database.fabricRollDao().updateRoll(
-      roll.copy(
-        remainingMeters = newRemaining,
-        status = newStatus
+    // 2. Deduct from Roll — Phase 15 Patch 4D: only NEW meters (not Step 1 items)
+    if (totalNewMeters > 0.0) {
+      val newRemaining = FinancialCalculationService.calculateRemainingRollMeters(roll.remainingMeters, totalNewMeters)
+      val newStatus = if (newRemaining <= 0.5) "پایان یافته" else "در حال مصرف"
+      database.fabricRollDao().updateRoll(
+        roll.copy(
+          remainingMeters = newRemaining,
+          status = newStatus
+        )
       )
-    )
+    }
 
     return Pair(
       true,
