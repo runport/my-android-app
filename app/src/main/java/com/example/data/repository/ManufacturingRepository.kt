@@ -1726,8 +1726,9 @@ class ManufacturingRepository(private val database: AppDatabase) {
     }
 
     // 2. Deduct from Roll — Phase 15 Patch 4D: only NEW meters (not Step 1 items)
+    // Compute newRemaining unconditionally so it's available for the success message.
+    val newRemaining = FinancialCalculationService.calculateRemainingRollMeters(roll.remainingMeters, totalNewMeters)
     if (totalNewMeters > 0.0) {
-      val newRemaining = FinancialCalculationService.calculateRemainingRollMeters(roll.remainingMeters, totalNewMeters)
       val newStatus = if (newRemaining <= 0.5) "پایان یافته" else "در حال مصرف"
       database.fabricRollDao().updateRoll(
         roll.copy(
