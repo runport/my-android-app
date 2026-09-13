@@ -216,6 +216,7 @@ fun MainAppScreen(viewModel: ManufacturingViewModel) {
 
     val selectedDrillDown by viewModel.selectedDrillDown.collectAsStateWithLifecycle()
     val sectionSettingsTarget by viewModel.sectionSettingsDialog.collectAsStateWithLifecycle()
+    val showReserveOrder by viewModel.showReserveOrderDialog.collectAsStateWithLifecycle()
 
     selectedDrillDown?.let { drill ->
       com.example.ui.components.DrillDownDialog(
@@ -230,6 +231,14 @@ fun MainAppScreen(viewModel: ManufacturingViewModel) {
         target = target,
         viewModel = viewModel,
         onDismiss = { viewModel.closeSectionSettings() }
+      )
+    }
+
+    // Phase 16.4 — render ReserveOrderDialog when triggered from MoreHubScreen
+    if (showReserveOrder) {
+      com.example.ui.dialogs.ReserveOrderDialog(
+        viewModel = viewModel,
+        onDismiss = { viewModel.closeReserveOrderDialog() }
       )
     }
 
