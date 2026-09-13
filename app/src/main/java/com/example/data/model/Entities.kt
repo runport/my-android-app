@@ -124,6 +124,12 @@ data class ProductionEntity(
   val rollCode: String = "", // کد طاقه مثلا "ROL-101"
   val consumablesSummary: String = "", // خلاصه ملزومات مصرفی
   val orderId: Long? = null, // سفارش مرتبط در صورت وجود
+
+  // Phase 16.8 — Final price engine inputs
+  val fabricShippingShare: Long = 0L,       // سهم کرایه پارچه در بهای هر عدد
+  val accessoriesShippingShare: Long = 0L,  // سهم کرایه ملزومات در بهای هر عدد
+  val overheadCostPerItem: Long = 0L,       // سربار تخصیص‌یافته هر عدد (اسنپ‌شات)
+  val sellingPrice: Long = 0L,              // قیمت فروش نهایی تأییدشده (اختیاری)
 ) {
   val weightPerItemGrams: Double get() = if (quantity > 0) (totalWeightKg * 1000.0) / quantity else 0.0
   val fabricMetersPerItem: Double get() = if (quantity > 0) fabricMetersUsed / quantity else 0.0

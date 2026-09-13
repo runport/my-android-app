@@ -137,7 +137,7 @@ import kotlinx.coroutines.launch
     BaseCostConfigEntity::class,
     FabricPriceHistoryEntity::class,
   ],
-  version = 14,
+  version = 15,
   exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -891,6 +891,27 @@ abstract class AppDatabase : RoomDatabase() {
       }
     }
 
+    val MIGRATION_14_15 = object : Migration(14, 15) {
+      override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+          "ALTER TABLE `production_records` " +
+          "ADD COLUMN `fabricShippingShare` INTEGER NOT NULL DEFAULT 0"
+        )
+        db.execSQL(
+          "ALTER TABLE `production_records` " +
+          "ADD COLUMN `accessoriesShippingShare` INTEGER NOT NULL DEFAULT 0"
+        )
+        db.execSQL(
+          "ALTER TABLE `production_records` " +
+          "ADD COLUMN `overheadCostPerItem` INTEGER NOT NULL DEFAULT 0"
+        )
+        db.execSQL(
+          "ALTER TABLE `production_records` " +
+          "ADD COLUMN `sellingPrice` INTEGER NOT NULL DEFAULT 0"
+        )
+      }
+    }
+
     val MIGRATION_11_12 = object : Migration(11, 12) {
       override fun migrate(db: SupportSQLiteDatabase) {
         try {
@@ -909,7 +930,7 @@ abstract class AppDatabase : RoomDatabase() {
           AppDatabase::class.java,
           "manufacturing_executive.db"
         )
-          .addMigrations(MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14)
+          .addMigrations(MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15)
           .addCallback(DatabaseCallback(scope))
           .build()
         INSTANCE = instance
