@@ -1339,6 +1339,72 @@ private fun FabricReportSection(
       }
     }
 
+    // Phase 15 Patch 5A: actual vs economic value card
+    Box(
+      modifier = Modifier
+        .fillMaxWidth()
+        .clip(RoundedCornerShape(14.dp))
+        .background(customColors.card)
+        .border(1.dp, AccentCyan.copy(alpha = 0.4f), RoundedCornerShape(14.dp))
+        .padding(14.dp)
+    ) {
+      Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Text(
+          text = "بهای واقعی در برابر بهای جایگزینی (Actual vs Economic)",
+          style = MaterialTheme.typography.labelMedium,
+          color = AccentCyan,
+          fontWeight = FontWeight.Bold
+        )
+        Text(
+          text = "مقایسه ارزش موجودی پارچه بر پایه بهای خرید تاریخی و قیمت روز بازار",
+          style = MaterialTheme.typography.labelSmall,
+          color = customColors.textMuted,
+          fontSize = 10.sp
+        )
+        Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween) {
+          Text("بهای واقعی (Historical):", fontSize = 11.sp, color = customColors.textMuted)
+          Text(
+            FinancialCalculationService.formatCurrency(report.totalActualValue),
+            fontSize = 12.sp,
+            color = customColors.textPrimary,
+            fontWeight = FontWeight.Bold
+          )
+        }
+        Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween) {
+          Text("بهای جایگزینی (Market):", fontSize = 11.sp, color = customColors.textMuted)
+          Text(
+            FinancialCalculationService.formatCurrency(report.totalEconomicValue),
+            fontSize = 12.sp,
+            color = AccentBlue,
+            fontWeight = FontWeight.Bold
+          )
+        }
+        Box(
+          Modifier
+            .fillMaxWidth()
+            .height(1.dp)
+            .background(customColors.border)
+        )
+        Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween) {
+          Text(
+            "تفاوت (سود / هزینه فرصت):",
+            fontSize = 11.sp,
+            color = customColors.textPrimary,
+            fontWeight = FontWeight.Bold
+          )
+          Text(
+            text = if (report.opportunityDelta >= 0L)
+              "+${FinancialCalculationService.formatCurrency(report.opportunityDelta)}"
+            else
+              FinancialCalculationService.formatCurrency(report.opportunityDelta),
+            fontSize = 13.sp,
+            color = AccentCyan,
+            fontWeight = FontWeight.Bold
+          )
+        }
+      }
+    }
+
     Row(
       modifier = Modifier.fillMaxWidth(),
       horizontalArrangement = Arrangement.spacedBy(8.dp)

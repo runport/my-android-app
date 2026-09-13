@@ -150,7 +150,10 @@ data class FabricRollSummary(
   val initialMeters: Double,
   val remainingMeters: Double,
   val totalCost: Long,
-  val freightAllocated: Long
+  val freightAllocated: Long,
+  // Phase 15 Patch 5A: actual vs economic price tracking
+  val buyPricePerMeter: Long = 0L,
+  val currentPricePerMeter: Long = 0L
 )
 
 data class FabricReportData(
@@ -161,7 +164,11 @@ data class FabricReportData(
   val remainingMeters: Double = 0.0,
   val totalFabricCost: Long = 0L,
   val totalFreightAllocated: Long = 0L,
-  val rolls: List<FabricRollSummary> = emptyList()
+  val rolls: List<FabricRollSummary> = emptyList(),
+  // Phase 15 Patch 5A: actual (historical) vs economic (market) value
+  val totalActualValue: Long = 0L,
+  val totalEconomicValue: Long = 0L,
+  val opportunityDelta: Long = 0L
 )
 
 data class FreightReportData(

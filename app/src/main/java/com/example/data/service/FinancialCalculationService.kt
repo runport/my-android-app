@@ -1016,16 +1016,29 @@ object FinancialCalculationService {
     val fabricCost = fabrics.sumOf { it.totalStockValue }
     val freightAllocated = rolls.sumOf { it.allocatedShippingCost }
 
+    // Phase 15 Patch 5A: compute actual vs economic value per roll
     val summaries = rolls.map { r ->
+      val effectiveCurrent = if (r.currentPricePerMeter > 0L) r.currentPricePerMeter else r.buyPricePerMeter
       FabricRollSummary(
         rollNumber = r.rollCode,
         fabricType = r.fabricType,
         initialMeters = r.initialMeters,
         remainingMeters = r.remainingMeters,
         totalCost = r.totalCostWithShipping,
-        freightAllocated = r.allocatedShippingCost
+        freightAllocated = r.allocatedShippingCost,
+        buyPricePerMeter = r.buyPricePerMeter,
+        currentPricePerMeter = effectiveCurrent
       )
     }
+
+    val totalActualValue = rolls.sumOf { r ->
+      (r.remainingMeters * r.buyPricePerMeter).toLong()
+    }
+    val totalEconomicValue = rolls.sumOf { r ->
+      val p = if (r.currentPricePerMeter > 0L) r.currentPricePerMeter else r.buyPricePerMeter
+      (r.remainingMeters * p).toLong()
+    }
+    val opportunityDelta = totalEconomicValue - totalActualValue
 
     return FabricReportData(
       totalRolls = totalRolls,
@@ -1035,7 +1048,10 @@ object FinancialCalculationService {
       remainingMeters = remaining,
       totalFabricCost = fabricCost,
       totalFreightAllocated = freightAllocated,
-      rolls = summaries
+      rolls = summaries,
+      totalActualValue = totalActualValue,
+      totalEconomicValue = totalEconomicValue,
+      opportunityDelta = opportunityDelta
     )
   }
 
