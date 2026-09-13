@@ -18,6 +18,7 @@ import com.example.data.model.MultiProductReadyItem
 import com.example.data.model.OrderStatusHistoryEntity
 import com.example.data.model.ProductionConsumableEntity
 import com.example.data.model.ProductionConsumableInputItem
+import com.example.data.demo.DemoSeeder
 import com.example.data.model.ProductionEntity
 import com.example.data.model.RollUsageEntity
 import com.example.data.model.SaleLineInput
@@ -1951,6 +1952,14 @@ class ManufacturingRepository(private val database: AppDatabase) {
       "ثبت موفق: ${products.size} محصول به انبار کار آماده اضافه شد. باقیمانده طاقه ${roll.rollCode}: $newRemaining متر."
     )
   }
+
+  // ====================================================
+  // PHASE 16.DEMO — Demo data seeding (for testing)
+  // ====================================================
+
+  suspend fun seedDemo(): Pair<Boolean, String> = DemoSeeder.seed(database)
+
+  suspend fun clearDemo(): Pair<Boolean, String> = DemoSeeder.clear(database)
 
   // ====================================================
   // 4, 8: Production Registration with Consumables & Tailor Cost
