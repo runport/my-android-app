@@ -1945,42 +1945,78 @@ class ManufacturingRepository(private val database: AppDatabase) {
     val costSnapshot = product?.currentCostPrice ?: 0L
     val salePriceSnapshot = product?.suggestedSellingPrice ?: unitPrice
 
-    // Inventory reservation check (Scenario 9: reserve available stock, surplus requires production)
+    // Phase 16.2b: fix lookup (PRD- prefix) + branch on payment status
     val invItem = database.inventoryDao().getByCode(modelCode)
+      ?: database.inventoryDao().getByCode("PRD-${modelCode.removePrefix("M")}")
     val available = invItem?.availableForSale ?: 0
     val reserveQty = minOf(quantity, maxOf(0, available))
     val deficitToProduce = quantity - reserveQty
     val isFullyReserved = reserveQty == quantity
 
-    if (invItem != null && reserveQty > 0) {
-      val updatedInv = invItem.copy(
-        availableForSale = invItem.availableForSale - reserveQty,
-        reservedQuantity = invItem.reservedQuantity + reserveQty,
-        lastUpdated = currentDate
-      )
-      database.inventoryDao().updateItem(updatedInv)
+    val orderNetTotal = (quantity.toLong() * unitPrice - discountAmount + shippingCost).coerceAtLeast(0L)
+    val isFullyPaid = orderNetTotal > 0L && paidAmount >= orderNetTotal
 
-      // Record Reservation in ledger
-      database.inventoryLedgerDao().insert(
-        InventoryLedgerEntity(
-          timestamp = System.currentTimeMillis(),
-          date = currentDate,
-          itemType = "FINISHED_GOOD",
-          itemId = invItem.id,
-          itemCode = modelCode,
-          itemName = modelName,
-          color = color,
-          size = size,
-          transactionType = "SALE_RESERVATION",
-          quantityChange = -reserveQty.toDouble(),
-          balanceAfter = updatedInv.availableForSale.toDouble(),
-          unit = "عدد",
-          unitPriceAtTime = costSnapshot,
-          relatedDocumentNumber = orderNumber,
-          notes = if (deficitToProduce > 0) "رزرو $reserveQty عدد (کسری نیازمند تولید: $deficitToProduce عدد) برای سفارش $orderNumber ($customerName)" else "رزرو کامل $reserveQty عدد برای سفارش $orderNumber ($customerName)",
-          operator = "مدیر سیستم"
+    if (invItem != null && reserveQty > 0) {
+      if (isFullyPaid) {
+        // Fully paid: permanent stock out (shipment)
+        val newReady = (invItem.readyForShipment - reserveQty).coerceAtLeast(0)
+        val newAvailable = invItem.availableForSale - reserveQty
+        database.inventoryDao().updateItem(
+          invItem.copy(
+            availableForSale = newAvailable,
+            readyForShipment = newReady,
+            lastUpdated = currentDate
+          )
         )
-      )
+        database.inventoryLedgerDao().insert(
+          InventoryLedgerEntity(
+            timestamp = System.currentTimeMillis(),
+            date = currentDate,
+            itemType = "FINISHED_GOOD",
+            itemId = invItem.id,
+            itemCode = invItem.code,
+            itemName = modelName,
+            color = color,
+            size = size,
+            transactionType = "SALE_SHIPMENT",
+            quantityChange = -reserveQty.toDouble(),
+            balanceAfter = newAvailable.toDouble(),
+            unit = "عدد",
+            unitPriceAtTime = costSnapshot,
+            relatedDocumentNumber = orderNumber,
+            notes = if (deficitToProduce > 0) "فروش قطعی $reserveQty عدد (کسری نیازمند تولید: $deficitToProduce عدد) برای سفارش $orderNumber ($customerName)" else "فروش قطعی کامل $reserveQty عدد برای سفارش $orderNumber ($customerName)",
+            operator = "مدیر سیستم"
+          )
+        )
+      } else {
+        // Unpaid / partial: reserve
+        val updatedInv = invItem.copy(
+          availableForSale = invItem.availableForSale - reserveQty,
+          reservedQuantity = invItem.reservedQuantity + reserveQty,
+          lastUpdated = currentDate
+        )
+        database.inventoryDao().updateItem(updatedInv)
+        database.inventoryLedgerDao().insert(
+          InventoryLedgerEntity(
+            timestamp = System.currentTimeMillis(),
+            date = currentDate,
+            itemType = "FINISHED_GOOD",
+            itemId = invItem.id,
+            itemCode = invItem.code,
+            itemName = modelName,
+            color = color,
+            size = size,
+            transactionType = "SALE_RESERVATION",
+            quantityChange = -reserveQty.toDouble(),
+            balanceAfter = updatedInv.availableForSale.toDouble(),
+            unit = "عدد",
+            unitPriceAtTime = costSnapshot,
+            relatedDocumentNumber = orderNumber,
+            notes = if (deficitToProduce > 0) "رزرو $reserveQty عدد (کسری نیازمند تولید: $deficitToProduce عدد) برای سفارش $orderNumber ($customerName)" else "رزرو کامل $reserveQty عدد برای سفارش $orderNumber ($customerName)",
+            operator = "مدیر سیستم"
+          )
+        )
+      }
     }
 
     val initialStatus = when {
