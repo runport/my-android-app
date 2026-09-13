@@ -941,6 +941,31 @@ class ManufacturingViewModel(
     }
   }
 
+  // ---------------------------------------------------------------
+  // Phase 16.Demo3 — Demo data controls
+  // ---------------------------------------------------------------
+  fun seedDemo() {
+    viewModelScope.launch {
+      try {
+        val (success, msg) = repository.seedDemo()
+        _notification.value = if (success) UiNotification(msg) else UiNotification(msg, true)
+      } catch (e: Exception) {
+        _notification.value = UiNotification("خطا در بارگذاری دمو: ${e.localizedMessage}", true)
+      }
+    }
+  }
+
+  fun clearDemo() {
+    viewModelScope.launch {
+      try {
+        val (success, msg) = repository.clearDemo()
+        _notification.value = if (success) UiNotification(msg) else UiNotification(msg, true)
+      } catch (e: Exception) {
+        _notification.value = UiNotification("خطا در پاک‌سازی دمو: ${e.localizedMessage}", true)
+      }
+    }
+  }
+
   fun saveFactorySettings(
     fixedShippingPerOrder: Long,
     fixedShippingPerRoll: Long,

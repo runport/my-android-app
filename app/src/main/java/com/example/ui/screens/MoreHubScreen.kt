@@ -28,6 +28,7 @@ import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.ContentCut
 import androidx.compose.material.icons.filled.Calculate
 import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FileDownload
@@ -161,6 +162,8 @@ fun MoreHubScreen(
   var showResetConfirmDialog by remember { mutableStateOf(false) }
   var showClearAllConfirmDialog by remember { mutableStateOf(false) }
   var showRestoreBackupDialog by remember { mutableStateOf(false) }
+  var showSeedDemoConfirm by remember { mutableStateOf(false) }
+  var showClearDemoConfirm by remember { mutableStateOf(false) }
   var showQuickCalcDialog by remember { mutableStateOf(false) }
   var showAddSupplierDialog by remember { mutableStateOf(false) }
   var supplierToDelete by remember { mutableStateOf<SupplierEntity?>(null) }
@@ -540,6 +543,42 @@ fun MoreHubScreen(
         showRestoreBackupDialog = false
       },
       onDismiss = { showRestoreBackupDialog = false }
+    )
+  }
+
+  if (showSeedDemoConfirm) {
+    AlertDialog(
+      onDismissRequest = { showSeedDemoConfirm = false },
+      title = { Text("بارگذاری داده‌های دمو", fontWeight = FontWeight.Bold) },
+      text = { Text("داده‌های واقعی نمونه در برنامه ثبت می‌شوند تا کل چرخه (طاقه، ملزومات، برش، فروش، رزرو) قابل تست باشد. ادامه؟") },
+      confirmButton = {
+        TextButton(onClick = {
+          viewModel.seedDemo()
+          showSeedDemoConfirm = false
+        }) { Text("بارگذاری", color = StatusSuccess, fontWeight = FontWeight.Bold) }
+      },
+      dismissButton = {
+        TextButton(onClick = { showSeedDemoConfirm = false }) { Text("انصراف") }
+      },
+      containerColor = customColors.cardElevated
+    )
+  }
+
+  if (showClearDemoConfirm) {
+    AlertDialog(
+      onDismissRequest = { showClearDemoConfirm = false },
+      title = { Text("پاک‌سازی داده‌های دمو", fontWeight = FontWeight.Bold) },
+      text = { Text("فقط رکوردهایی که با پیشوندهای DEMO-/PROD- مشخص شده‌اند پاک می‌شوند. داده‌های واقعی دست‌نخورده می‌مانند. ادامه؟") },
+      confirmButton = {
+        TextButton(onClick = {
+          viewModel.clearDemo()
+          showClearDemoConfirm = false
+        }) { Text("پاک کن", color = StatusDanger, fontWeight = FontWeight.Bold) }
+      },
+      dismissButton = {
+        TextButton(onClick = { showClearDemoConfirm = false }) { Text("انصراف") }
+      },
+      containerColor = customColors.cardElevated
     )
   }
 
@@ -1389,6 +1428,29 @@ fun MoreHubScreen(
                   Icon(Icons.Default.FileUpload, contentDescription = null, modifier = Modifier.size(16.dp), tint = AccentBlue)
                   Spacer(Modifier.size(8.dp))
                   Text("بازیابی اطلاعات از فایل پشتیبان (JSON / Import)", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                }
+
+                // Phase 16.Demo3 — Demo data buttons
+                Button(
+                  onClick = { showSeedDemoConfirm = true },
+                  modifier = Modifier.fillMaxWidth().height(42.dp),
+                  shape = RoundedCornerShape(8.dp),
+                  colors = ButtonDefaults.buttonColors(containerColor = StatusSuccess)
+                ) {
+                  Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+                  Spacer(Modifier.size(8.dp))
+                  Text("🌱 بارگذاری داده‌های دمو (تست)", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                }
+
+                OutlinedButton(
+                  onClick = { showClearDemoConfirm = true },
+                  modifier = Modifier.fillMaxWidth().height(42.dp),
+                  shape = RoundedCornerShape(8.dp),
+                  colors = ButtonDefaults.outlinedButtonColors(contentColor = StatusDanger)
+                ) {
+                  Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(16.dp), tint = StatusDanger)
+                  Spacer(Modifier.size(8.dp))
+                  Text("🗑️ پاک‌سازی داده‌های دمو", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
                 }
 
                 // Quick Workshop Calculator
