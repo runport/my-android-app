@@ -61,7 +61,8 @@ data class WaybillItemDraft(
     var unit: String = "کیلوگرم",
     var purchaseValueText: String = "0",
     var weightKgText: String = "0",
-    var allocationMethod: ShippingAllocationMethod = ShippingAllocationMethod.BY_WEIGHT
+    var allocationMethod: ShippingAllocationMethod = ShippingAllocationMethod.BY_WEIGHT,
+    var manualAllocationText: String = "0"
 )
 
 /** ساختار داخلی برای آیتم لیست انتخاب */
@@ -274,8 +275,10 @@ fun WaybillMultiItemForm(
                     Text("مبنای تخصیص کرایه:", fontSize = 11.sp, color = customColors.textMuted)
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                         listOf(
+                            ShippingAllocationMethod.BY_PURCHASE_VALUE to "ارزش",
                             ShippingAllocationMethod.BY_WEIGHT to "وزن",
-                            ShippingAllocationMethod.PER_QUANTITY to "متر/عدد"
+                            ShippingAllocationMethod.PER_QUANTITY to "مقدار",
+                            ShippingAllocationMethod.MANUAL to "دستی"
                         ).forEach { pair ->
                             val method = pair.first
                             val label = pair.second
@@ -290,6 +293,16 @@ fun WaybillMultiItemForm(
                                     fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal)
                             }
                         }
+                    }
+
+                    // ورودی دستی برای حالت MANUAL
+                    if (item.allocationMethod == ShippingAllocationMethod.MANUAL) {
+                        ExecutiveTextField(
+                            label = "سهم دستی این قلم (تومان)",
+                            value = item.manualAllocationText,
+                            keyboardType = KeyboardType.Number,
+                            onValueChange = { items[idx] = item.copy(manualAllocationText = it) }
+                        )
                     }
 
                     // نمایش سهم
@@ -462,29 +475,52 @@ private fun ExecutiveTextField(
 fun calculateAllocations(items: List<WaybillItemDraft>, totalAmount: Long): List<Long> {
     if (items.isEmpty() || totalAmount <= 0L) return items.map { 0L }
 
-    // مبنا برای هر آیتم
-    fun basisOf(item: WaybillItemDraft): Double {
-        return when (item.allocationMethod) {
-            ShippingAllocationMethod.BY_WEIGHT -> item.weightKgText.toDoubleOrNull()
-                ?: item.quantityText.toDoubleOrNull() ?: 0.0
-            ShippingAllocationMethod.PER_QUANTITY -> item.quantityText.toDoubleOrNull() ?: 0.0
-            else -> item.quantityText.toDoubleOrNull() ?: 0.0
+    val result = MutableList(items.size) { 0L }
+
+    // ۱. خطوط MANUAL مستقیم مقدار دستی خود را می‌گیرند.
+    var manualSum = 0L
+    val nonManualIndices = mutableListOf<Int>()
+    items.forEachIndexed { i, item ->
+        if (item.allocationMethod == ShippingAllocationMethod.MANUAL) {
+            val v = item.manualAllocationText.toLongOrNull() ?: 0L
+            result[i] = v
+            manualSum += v
+        } else {
+            nonManualIndices += i
         }
     }
 
-    val bases = items.map { basisOf(it) }
+    val remaining = (totalAmount - manualSum).coerceAtLeast(0L)
+    if (nonManualIndices.isEmpty()) return result
+
+    // ۲. توزیع مابقی بین خطوط غیردستی بر اساس مبنا.
+    fun basisOf(item: WaybillItemDraft): Double = when (item.allocationMethod) {
+        ShippingAllocationMethod.BY_WEIGHT -> item.weightKgText.toDoubleOrNull()
+            ?: item.quantityText.toDoubleOrNull() ?: 0.0
+        ShippingAllocationMethod.BY_PURCHASE_VALUE -> item.purchaseValueText.toDoubleOrNull() ?: 0.0
+        ShippingAllocationMethod.PER_QUANTITY -> item.quantityText.toDoubleOrNull() ?: 0.0
+        else -> item.quantityText.toDoubleOrNull() ?: 0.0
+    }
+
+    val bases = nonManualIndices.map { basisOf(items[it]) }
     val totalBasis = bases.sum()
 
-    if (totalBasis <= 0.0) return items.map { 0L }
+    if (totalBasis <= 0.0) {
+        val each = remaining / nonManualIndices.size
+        nonManualIndices.forEachIndexed { k, idx ->
+            result[idx] = if (k == nonManualIndices.lastIndex)
+                (remaining - each * (nonManualIndices.size - 1)).coerceAtLeast(0L) else each
+        }
+        return result
+    }
 
-    val result = MutableList(items.size) { 0L }
     var accumulated = 0L
-    for (i in items.indices) {
-        if (i == items.lastIndex) {
-            result[i] = (totalAmount - accumulated).coerceAtLeast(0L)
+    nonManualIndices.forEachIndexed { k, idx ->
+        if (k == nonManualIndices.lastIndex) {
+            result[idx] = (remaining - accumulated).coerceAtLeast(0L)
         } else {
-            val share = (totalAmount * (bases[i] / totalBasis)).toLong()
-            result[i] = share
+            val share = (remaining * (bases[k] / totalBasis)).toLong()
+            result[idx] = share
             accumulated += share
         }
     }
