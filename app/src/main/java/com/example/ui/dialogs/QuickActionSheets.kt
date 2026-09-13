@@ -228,8 +228,8 @@ fun QuickActionsModalBottomSheet(
           QuickSaleForm(
             viewModel = viewModel,
             isPreOrder = false,
-            onSubmit = { customer, phone, modelCode, modelName, qty, price, discount, paid, cost ->
-              viewModel.submitSale(customer, phone, modelCode, modelName, qty, price, discount, paid, cost)
+            onSubmitMulti = { customer, phone, lines, discount, paid ->
+              viewModel.submitMultiLineSale(customer, phone, lines, discount, paid)
             },
             onBack = { viewModel.openQuickAction(QuickActionType.WAREHOUSE_HUB) }
           )
@@ -2186,7 +2186,7 @@ fun QuickSettingsForm(
 fun QuickSaleForm(
   viewModel: ManufacturingViewModel,
   isPreOrder: Boolean,
-  onSubmit: (String, String, String, String, Int, Long, Long, Long, Long) -> Unit,
+  onSubmitMulti: (String, String, List<SaleLineInput>, Long, Long) -> Unit,
   onBack: () -> Unit
 ) {
   val customColors = LocalCustomColors.current
@@ -2202,26 +2202,26 @@ fun QuickSaleForm(
   var showProductPicker by remember { mutableStateOf(false) }
   var showNewCustomerForm by remember { mutableStateOf(false) }
 
-  var customerName by remember { mutableStateOf("بوتیک آریا (احمدی)") }
-  var customerPhone by remember { mutableStateOf("09121234567") }
-  var modelCode by remember { mutableStateOf("HD-204") }
-  var modelName by remember { mutableStateOf("هودی دورس ۳ نخ خارخورده") }
-  var quantityText by remember { mutableStateOf("50") }
-  var unitPriceText by remember { mutableStateOf("680000") }
-  var discountText by remember { mutableStateOf("500000") }
-  var prePaymentText by remember { mutableStateOf("15000000") }
+  var customerName by remember { mutableStateOf("") }
+  var customerPhone by remember { mutableStateOf("") }
+  val lines = remember { mutableStateListOf<SaleLineDraft>() }
+  var discountText by remember { mutableStateOf("0") }
+  var prePaymentText by remember { mutableStateOf("0") }
 
-  val qty = quantityText.toIntOrNull() ?: 0
-  val effectiveUnitPrice = unitPriceText.toLongOrNull() ?: 0L
-  val unitPrice = effectiveUnitPrice
   val discount = discountText.toLongOrNull() ?: 0L
   val prePaid = prePaymentText.toLongOrNull() ?: 0L
 
-  val subtotal = qty * unitPrice
+  val subtotal = lines.sumOf { ln ->
+    val q = ln.quantityText.toIntOrNull() ?: 0
+    val p = ln.unitPriceText.toLongOrNull() ?: 0L
+    q.toLong() * p
+  }
   val netTotal = (subtotal - discount).coerceAtLeast(0L)
   val remainingDebt = (netTotal - prePaid).coerceAtLeast(0L)
-  val unitCost = 425000L
-  val totalCost = qty * unitCost
+  val totalCost = lines.sumOf { ln ->
+    val q = ln.quantityText.toIntOrNull() ?: 0
+    q.toLong() * ln.unitCost
+  }
   val profit = (netTotal - totalCost).coerceAtLeast(0L)
 
   Column(
@@ -2274,7 +2274,68 @@ fun QuickSaleForm(
       }
     }
 
-    // Product Picker for Sale
+    // ---------- Cart lines ----------
+    if (lines.isEmpty()) {
+      Box(
+        modifier = Modifier
+          .fillMaxWidth()
+          .padding(20.dp),
+        contentAlignment = Alignment.Center
+      ) {
+        Text(
+          "هنوز قلمی اضافه نشده. از دکمه زیر اضافه کنید.",
+          color = customColors.textMuted,
+          fontSize = 12.sp
+        )
+      }
+    } else {
+      lines.forEachIndexed { index, line ->
+        Card(
+          modifier = Modifier.fillMaxWidth(),
+          colors = CardDefaults.cardColors(containerColor = customColors.cardElevated),
+          shape = RoundedCornerShape(12.dp)
+        ) {
+          Column(
+            modifier = Modifier.padding(10.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+          ) {
+            Row(
+              modifier = Modifier.fillMaxWidth(),
+              horizontalArrangement = Arrangement.SpaceBetween,
+              verticalAlignment = Alignment.CenterVertically
+            ) {
+              Column(modifier = Modifier.weight(1f)) {
+                Text(line.modelName, color = customColors.textPrimary, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                Text(line.modelCode, color = customColors.textMuted, fontSize = 10.sp)
+              }
+              IconButton(onClick = { lines.removeAt(index) }) {
+                Icon(Icons.Default.Delete, contentDescription = "حذف", tint = customColors.textMuted)
+              }
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+              Box(modifier = Modifier.weight(1f)) {
+                ExecutiveTextField(
+                  label = "تعداد",
+                  value = line.quantityText,
+                  keyboardType = KeyboardType.Number,
+                  onValueChange = { newVal -> lines[index] = line.copy(quantityText = newVal) }
+                )
+              }
+              Box(modifier = Modifier.weight(1f)) {
+                ExecutiveTextField(
+                  label = "قیمت واحد (تومان)",
+                  value = line.unitPriceText,
+                  keyboardType = KeyboardType.Number,
+                  onValueChange = { newVal -> lines[index] = line.copy(unitPriceText = newVal) }
+                )
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // Add-line button
     Button(
       onClick = { showProductPicker = true },
       modifier = Modifier.fillMaxWidth().height(44.dp),
@@ -2282,23 +2343,8 @@ fun QuickSaleForm(
       colors = ButtonDefaults.buttonColors(containerColor = AccentIndigo.copy(alpha = 0.18f))
     ) {
       Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-        Icon(Icons.Default.Search, contentDescription = null, tint = AccentIndigo, modifier = Modifier.size(18.dp))
-        Text(
-          text = if (modelName.isNotBlank())
-            "محصول: $modelName ($modelCode) - برای تغییر کلیک کنید"
-          else
-            "انتخاب محصول از لیست کالاها",
-          color = AccentIndigo, fontSize = 12.sp, fontWeight = FontWeight.Bold
-        )
-      }
-    }
-
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-      Box(modifier = Modifier.weight(1.4f)) {
-        ExecutiveTextField(label = "مدل محصول", value = modelName, onValueChange = { modelName = it })
-      }
-      Box(modifier = Modifier.weight(0.6f)) {
-        ExecutiveTextField(label = "کد", value = modelCode, onValueChange = { modelCode = it })
+        Icon(Icons.Default.Add, contentDescription = null, tint = AccentIndigo, modifier = Modifier.size(18.dp))
+        Text("افزودن قلم از لیست کالاهای آماده", color = AccentIndigo, fontSize = 12.sp, fontWeight = FontWeight.Bold)
       }
     }
 
@@ -2324,17 +2370,23 @@ fun QuickSaleForm(
       )
     }
 
-    // Product Picker Dialog
+    // Product Picker Dialog (appends a line to the cart)
     if (showProductPicker) {
       ItemSelectionPopupDialog(
-        title = "انتخاب محصول برای فروش (فقط کالای آماده)",
+        title = "افزودن قلم به فاکتور",
         items = readyProducts,
         onDismiss = { showProductPicker = false },
         onAddNew = { showProductPicker = false },
         onItemSelected = { p ->
-          modelName = p.name
-          modelCode = p.code
-          unitPriceText = p.effectiveSellingPrice.toString()
+          lines.add(
+            SaleLineDraft(
+              modelCode = p.code,
+              modelName = p.name,
+              quantityText = "1",
+              unitPriceText = p.effectiveSellingPrice.toString(),
+              unitCost = p.currentCostPrice
+            )
+          )
           showProductPicker = false
         },
         itemLabel = { it.name },
@@ -2344,7 +2396,7 @@ fun QuickSaleForm(
       )
     }
 
-    // Inline New Customer dialog on top of QuickSaleForm
+    // Inline New Customer dialog
     if (showNewCustomerForm) {
       Dialog(
         onDismissRequest = { showNewCustomerForm = false },
@@ -2376,20 +2428,7 @@ fun QuickSaleForm(
       }
     }
 
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-      Box(modifier = Modifier.weight(1f)) {
-        ExecutiveTextField(label = "تعداد", value = quantityText, keyboardType = KeyboardType.Number, onValueChange = { quantityText = it })
-      }
-      Box(modifier = Modifier.weight(1f)) {
-        ExecutiveTextField(
-          label = "قیمت واحد (تومان)",
-          value = unitPriceText,
-          keyboardType = KeyboardType.Number,
-          onValueChange = { unitPriceText = it }
-        )
-      }
-    }
-
+    // Invoice-level discount + prepayment
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
       Box(modifier = Modifier.weight(1f)) {
         ExecutiveTextField(label = "تخفیف کل (تومان)", value = discountText, keyboardType = KeyboardType.Number, onValueChange = { discountText = it })
@@ -2399,7 +2438,7 @@ fun QuickSaleForm(
       }
     }
 
-    // Calculations Box
+    // Totals box
     Box(
       modifier = Modifier
         .fillMaxWidth()
@@ -2409,6 +2448,10 @@ fun QuickSaleForm(
         .padding(14.dp)
     ) {
       Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween) {
+          Text("جمع اقلام:", style = MaterialTheme.typography.bodySmall, color = customColors.textMuted)
+          Text(CurrencyHelper.formatToman(subtotal), style = MaterialTheme.typography.bodySmall, color = customColors.textPrimary, fontWeight = FontWeight.Bold)
+        }
         Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween) {
           Text("مبلغ خالص فاکتور:", style = MaterialTheme.typography.bodySmall, color = customColors.textMuted)
           Text(CurrencyHelper.formatToman(netTotal), style = MaterialTheme.typography.bodySmall, color = customColors.textPrimary, fontWeight = FontWeight.Bold)
@@ -2426,7 +2469,20 @@ fun QuickSaleForm(
 
     Button(
       onClick = {
-        onSubmit(customerName, customerPhone, modelCode, modelName, qty, unitPrice, discount, prePaid, totalCost)
+        val validLines = lines
+          .filter { (it.quantityText.toIntOrNull() ?: 0) > 0 && (it.unitPriceText.toLongOrNull() ?: 0L) > 0L }
+          .map {
+            SaleLineInput(
+              modelCode = it.modelCode,
+              modelName = it.modelName,
+              quantity = it.quantityText.toIntOrNull() ?: 0,
+              unitPrice = it.unitPriceText.toLongOrNull() ?: 0L,
+              unitCost = it.unitCost
+            )
+          }
+        if (validLines.isNotEmpty()) {
+          onSubmitMulti(customerName, customerPhone, validLines, discount, prePaid)
+        }
       },
       modifier = Modifier
         .fillMaxWidth()
